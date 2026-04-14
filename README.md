@@ -2,7 +2,6 @@
 
 A party game for 4 to 10 players. A crime happened. Someone in the group did it. Everyone else has to figure out who.
 
----
 
 ## How to Play
 
@@ -18,14 +17,12 @@ Each round goes like this:
 
 This repeats until someone wins.
 
----
 
 ## Winning
 
 - Innocents win when all Culprits are eliminated.
 - Culprits win when they equal or outnumber the Innocents still in the game.
 
----
 
 ## Number of Culprits
 
@@ -36,7 +33,6 @@ This repeats until someone wins.
 | 7 - 9   | 3        |
 | 10      | 4        |
 
----
 
 ## Tips
 
@@ -44,7 +40,6 @@ This repeats until someone wins.
 - Innocents: pay attention to what people say and use the clues wisely.
 - Watch for anyone who changes their story or acts nervous.
 
----
 
 ## Setup
 
@@ -55,7 +50,6 @@ This repeats until someone wins.
 5. Each player taps their card privately to see their role.
 6. The game begins.
 
----
 
 ## Notes
 
