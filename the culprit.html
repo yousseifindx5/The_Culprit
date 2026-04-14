@@ -1,0 +1,2555 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Culprit</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=Crimson+Text:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --paper: #d4b896;
+    --paper-dark: #b8976e;
+    --paper-light: #e8d5b7;
+    --ink: #1a0a00;
+    --ink-light: #3d1f00;
+    --crimson: #8b1a1a;
+    --crimson-light: #a52020;
+    --gold: #c8952a;
+    --cream: #f5ead8;
+    --shadow: rgba(26,10,0,0.5);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Crimson Text', Georgia, serif;
+    background-color: var(--paper-dark);
+    color: var(--ink);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  
+  .paper-bg {
+    min-height: 100vh;
+    background-image: 
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='400'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='400' height='400' filter='url(%23noise)' opacity='0.08'/%3E%3C/svg%3E"),
+      radial-gradient(ellipse at 20% 20%, #c8a87a 0%, #b8906a 40%, #a07850 100%);
+    background-size: 200px 200px, cover;
+    position: relative;
+  }
+
+  .paper-bg::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: 
+      repeating-linear-gradient(0deg, transparent, transparent 28px, rgba(139,87,42,0.04) 28px, rgba(139,87,42,0.04) 29px),
+      repeating-linear-gradient(90deg, transparent, transparent 28px, rgba(139,87,42,0.04) 28px, rgba(139,87,42,0.04) 29px);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  
+  .crumple-overlay {
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='600' height='600'%3E%3Cfilter id='c'%3E%3CfeTurbulence type='turbulence' baseFrequency='0.02 0.03' numOctaves='5' seed='2' result='t'/%3E%3CfeDiffuseLighting lighting-color='%23d4b896' surfaceScale='4' result='l'%3E%3CfeDistantLight azimuth='45' elevation='60'/%3E%3C/feDiffuseLighting%3E%3CfeBlend in='SourceGraphic' in2='l' mode='multiply'/%3E%3C/filter%3E%3Crect width='600' height='600' filter='url(%23c)' opacity='0.5'/%3E%3C/svg%3E");
+    background-size: 600px 600px;
+    pointer-events: none;
+    opacity: 0.6;
+    z-index: 1;
+    mix-blend-mode: multiply;
+  }
+
+  .content {
+    position: relative;
+    z-index: 2;
+    padding: 20px;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+
+  
+  .game-logo {
+    text-align: center;
+    margin-bottom: 30px;
+  }
+
+  .game-logo h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(2.5rem, 8vw, 5rem);
+    font-weight: 900;
+    color: var(--ink);
+    text-shadow: 5px 5px 15px var(--shadow);
+    letter-spacing: 0.05em;
+    line-height: 1;
+  }
+
+  .game-logo .subtitle {
+    font-family: 'Crimson Text', serif;
+    font-style: italic;
+    font-size: 1.1rem;
+    color: var(--crimson);
+    margin-top: 5px;
+    letter-spacing: 0.15em;
+  }
+
+  
+  .card {
+    background: var(--cream);
+    border: 2px solid var(--ink-light);
+    border-radius: 4px;
+    box-shadow: 4px 4px 0 var(--ink), 8px 8px 20px var(--shadow);
+    padding: 30px;
+    max-width: 700px;
+    width: 100%;
+    position: relative;
+  }
+
+  .card::before {
+    content: '';
+    position: absolute;
+    inset: 3px;
+    border: 1px solid rgba(139,87,42,0.2);
+    border-radius: 2px;
+    pointer-events: none;
+  }
+
+  .card-dark {
+    background: #2a1510;
+    border-color: #4a2a1a;
+    color: var(--cream);
+  }
+
+  
+  .role-card {
+    background: var(--cream);
+    border: 2px solid var(--ink);
+    border-radius: 6px;
+    padding: 40px 30px;
+    text-align: center;
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+    box-shadow: 4px 4px 0 var(--ink-light), 8px 8px 20px var(--shadow);
+    max-width: 380px;
+    margin: 0 auto;
+  }
+
+  .role-card.flipped {
+    background: #1e0f09;
+    color: var(--cream);
+    cursor: default;
+  }
+
+  .role-card:not(.flipped):hover {
+    transform: translateY(-3px);
+    box-shadow: 6px 6px 0 var(--ink-light), 12px 12px 25px var(--shadow);
+  }
+
+  .role-card .tap-hint {
+    font-size: 1.1rem;
+    color: var(--ink-light);
+    margin-bottom: 10px;
+  }
+
+  .role-card .player-name-on-card {
+    font-family: 'Playfair Display', serif;
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--crimson);
+  }
+
+  .role-card .role-label {
+    font-size: 0.9rem;
+    color: rgba(245,234,216,0.7);
+    margin-bottom: 8px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  .role-card .role-name {
+    font-family: 'Playfair Display', serif;
+    font-size: 2.2rem;
+    font-weight: 700;
+    color: #fff;
+    margin-bottom: 15px;
+  }
+
+  .mafia-badge {
+    background: var(--crimson);
+    color: #fff;
+    padding: 10px 20px;
+    border-radius: 3px;
+    font-size: 0.95rem;
+    line-height: 1.5;
+  }
+
+  
+  .btn {
+    font-family: 'Playfair Display', serif;
+    font-size: 1rem;
+    font-weight: 700;
+    padding: 12px 28px;
+    border: none;
+    border-radius: 3px;
+    cursor: pointer;
+    transition: all 0.15s;
+    letter-spacing: 0.05em;
+    display: inline-block;
+  }
+
+  .btn-primary {
+    background: var(--crimson);
+    color: #fff;
+    box-shadow: 3px 3px 0 #5a0a0a, 5px 5px 10px var(--shadow);
+  }
+
+  .btn-primary:hover {
+    background: var(--crimson-light);
+    transform: translateY(-1px);
+    box-shadow: 4px 4px 0 #5a0a0a, 7px 7px 15px var(--shadow);
+  }
+
+  .btn-primary:active {
+    transform: translateY(1px);
+    box-shadow: 2px 2px 0 #5a0a0a;
+  }
+
+  .btn-secondary {
+    background: #3a4a6a;
+    color: #fff;
+    box-shadow: 3px 3px 0 #1a2a4a, 5px 5px 10px var(--shadow);
+  }
+
+  .btn-secondary:hover {
+    background: #4a5a7a;
+    transform: translateY(-1px);
+  }
+
+  .btn-disabled {
+    background: #888;
+    color: #ccc;
+    cursor: not-allowed;
+    box-shadow: none;
+  }
+
+  
+  input[type="text"], input[type="number"] {
+    font-family: 'Crimson Text', serif;
+    font-size: 1.1rem;
+    padding: 10px 15px;
+    border: 2px solid var(--ink-light);
+    border-radius: 3px;
+    background: rgba(245,234,216,0.9);
+    color: var(--ink);
+    width: 100%;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  input[type="text"]:focus, input[type="number"]:focus {
+    border-color: var(--crimson);
+  }
+
+  
+  .screen { display: none; }
+  .screen.active { display: block; }
+
+  
+  .setup-section { margin-bottom: 25px; }
+  .setup-label {
+    font-family: 'Playfair Display', serif;
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--ink-light);
+    margin-bottom: 8px;
+    display: block;
+    letter-spacing: 0.05em;
+  }
+
+  .player-inputs { display: flex; flex-direction: column; gap: 10px; margin-top: 10px; }
+  
+  .player-input-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .player-num {
+    font-family: 'Playfair Display', serif;
+    font-weight: 700;
+    color: var(--crimson);
+    min-width: 25px;
+    font-size: 1rem;
+  }
+
+  
+  .count-selector {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .count-btn {
+    font-family: 'Playfair Display', serif;
+    font-weight: 700;
+    font-size: 1.1rem;
+    width: 45px;
+    height: 45px;
+    border: 2px solid var(--ink-light);
+    border-radius: 3px;
+    background: rgba(245,234,216,0.7);
+    color: var(--ink);
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .count-btn:hover { background: var(--cream); border-color: var(--crimson); }
+  .count-btn.selected { background: var(--crimson); color: #fff; border-color: var(--crimson); }
+
+  
+  .screen-title {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(1.4rem, 4vw, 2rem);
+    font-weight: 700;
+    color: var(--ink);
+    margin-bottom: 15px;
+    text-align: center;
+  }
+
+  .screen-title .highlight { color: var(--crimson); }
+
+  .screen-title-white {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(1.4rem, 4vw, 2rem);
+    font-weight: 700;
+    color: #fff;
+    text-align: center;
+    margin-bottom: 15px;
+  }
+
+  
+  .info-box {
+    background: var(--cream);
+    border: 1px solid rgba(139,87,42,0.3);
+    border-radius: 3px;
+    padding: 20px 25px;
+    margin: 15px 0;
+  }
+
+  .info-box-dark {
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(245,234,216,0.2);
+    border-radius: 3px;
+    padding: 20px 25px;
+    margin: 15px 0;
+    color: var(--cream);
+  }
+
+  
+  .crime-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: var(--crimson);
+    text-align: center;
+    padding: 15px 20px;
+    background: var(--cream);
+    border: 2px solid var(--crimson);
+    border-radius: 3px;
+    margin: 15px 0;
+  }
+
+  
+  .vote-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 12px;
+    margin: 20px 0;
+  }
+
+  .vote-btn {
+    font-family: 'Playfair Display', serif;
+    font-size: 1rem;
+    font-weight: 700;
+    padding: 14px 10px;
+    border: 2px solid var(--ink-light);
+    border-radius: 3px;
+    background: var(--cream);
+    color: var(--ink);
+    cursor: pointer;
+    transition: all 0.15s;
+    text-align: center;
+  }
+
+  .vote-btn:hover { border-color: var(--crimson); background: #fff5e8; }
+  .vote-btn.selected { background: var(--crimson); color: #fff; border-color: var(--crimson); }
+  .vote-btn.eliminated { opacity: 0.4; text-decoration: line-through; cursor: not-allowed; }
+
+  
+  .result-good {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(1.5rem, 5vw, 2.2rem);
+    font-weight: 900;
+    color: var(--crimson);
+    text-align: center;
+    margin-bottom: 10px;
+  }
+
+  .result-bravo {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(1.5rem, 5vw, 2.2rem);
+    font-weight: 900;
+    color: var(--gold);
+    text-align: center;
+    margin-bottom: 10px;
+  }
+
+  
+  .clue-box {
+    background: var(--cream);
+    border-left: 4px solid var(--crimson);
+    padding: 15px 20px;
+    margin: 15px 0;
+    font-size: 1.05rem;
+    line-height: 1.6;
+  }
+
+  .clue-number {
+    font-family: 'Playfair Display', serif;
+    font-weight: 700;
+    color: var(--crimson);
+    font-size: 1rem;
+    margin-bottom: 5px;
+  }
+
+  
+  .story-box {
+    background: #1e0f09;
+    color: var(--cream);
+    border-radius: 3px;
+    padding: 20px 25px;
+    margin: 15px 0;
+    font-size: 1rem;
+    line-height: 1.7;
+  }
+
+  .story-box ul { padding-left: 20px; margin: 8px 0; }
+  .story-box li { margin-bottom: 4px; }
+
+  
+  .round-info {
+    background: rgba(26,10,0,0.15);
+    border: 1px solid rgba(26,10,0,0.2);
+    border-radius: 3px;
+    padding: 10px 15px;
+    font-size: 0.9rem;
+    color: var(--ink-light);
+    margin-bottom: 15px;
+    text-align: center;
+    font-family: 'Playfair Display', serif;
+  }
+
+  
+  .rules-section h3 {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--crimson);
+    margin: 15px 0 8px;
+  }
+
+  .rules-section p, .rules-section li {
+    font-size: 0.95rem;
+    line-height: 1.6;
+    margin-bottom: 5px;
+  }
+
+  .rules-section ul { padding-left: 20px; }
+
+  
+  .hint-btn {
+    position: fixed;
+    top: 15px;
+    left: 15px;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: rgba(26,10,0,0.4);
+    border: 1px solid rgba(245,234,216,0.3);
+    color: var(--cream);
+    font-family: 'Playfair Display', serif;
+    font-weight: 700;
+    font-size: 1rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+    transition: background 0.2s;
+  }
+
+  .hint-btn:hover { background: var(--crimson); }
+
+  
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.7);
+    z-index: 200;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+
+  .modal-overlay.open { display: flex; }
+
+  .modal {
+    background: var(--cream);
+    border: 2px solid var(--ink);
+    border-radius: 4px;
+    padding: 30px;
+    max-width: 600px;
+    width: 100%;
+    max-height: 85vh;
+    overflow-y: auto;
+    box-shadow: 6px 6px 0 var(--ink), 10px 10px 30px rgba(0,0,0,0.5);
+    position: relative;
+  }
+
+  .modal-close {
+    position: absolute;
+    top: 12px;
+    right: 15px;
+    font-family: 'Playfair Display', serif;
+    font-weight: 700;
+    font-size: 1.2rem;
+    color: var(--crimson);
+    cursor: pointer;
+    background: none;
+    border: none;
+  }
+
+  .center { text-align: center; }
+  .mt-10 { margin-top: 10px; }
+  .mt-20 { margin-top: 20px; }
+  .mb-10 { margin-bottom: 10px; }
+
+  .flex-center { display: flex; justify-content: center; gap: 15px; flex-wrap: wrap; margin-top: 20px; }
+
+  
+  .divider {
+    border: none;
+    border-top: 1px solid rgba(139,87,42,0.3);
+    margin: 20px 0;
+  }
+
+  .ornament {
+    text-align: center;
+    color: var(--crimson);
+    font-size: 1.2rem;
+    margin: 10px 0;
+  }
+
+  
+  @keyframes fadeIn { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
+  .fade-in { animation: fadeIn 0.4s ease forwards; }
+
+  @keyframes flipCard {
+    0% { transform: rotateY(0); }
+    50% { transform: rotateY(90deg); }
+    100% { transform: rotateY(0); }
+  }
+
+  .flipping { animation: flipCard 0.4s ease; }
+
+  
+  .eliminated-badge {
+    display: inline-block;
+    background: var(--crimson);
+    color: #fff;
+    font-size: 0.75rem;
+    padding: 2px 8px;
+    border-radius: 2px;
+    margin-left: 8px;
+    font-family: 'Playfair Display', serif;
+    font-weight: 700;
+    vertical-align: middle;
+  }
+
+  
+  @media (max-width: 500px) {
+    .card { padding: 20px 15px; }
+    .vote-grid { grid-template-columns: repeat(2, 1fr); }
+  }
+</style>
+</head>
+<body>
+<div class="paper-bg">
+<div class="crumple-overlay"></div>
+
+<button class="hint-btn" onclick="openModal('howToPlay')" title="How to Play">?</button>
+
+
+<div class="modal-overlay" id="howToPlayModal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('howToPlay')">✕</button>
+    <h2 class="screen-title" style="text-align:left">How to Play</h2>
+    <div class="rules-section">
+      <h3> Goal</h3>
+      <p>Every round, a crime has been committed. The innocents must figure out who the Culprit(s) are — before they outnumber you!</p>
+
+      <h3> Setup</h3>
+      <ul>
+        <li>Enter your crew name and how many players are playing (4–10).</li>
+        <li>Each player enters their name one by one.</li>
+        <li>Each player gets a secret card with their job. Only they see it.</li>
+        <li>Culprits know they're guilty. Innocents don't know who is guilty.</li>
+      </ul>
+
+      <h3> Number of Culprits</h3>
+      <ul>
+        <li>4 players → 1 Culprit</li>
+        <li>5–6 players → 2 Culprits</li>
+        <li>7–9 players → 3 Culprits</li>
+        <li>10 players → 4 Culprits</li>
+      </ul>
+
+      <h3> Gameplay</h3>
+      <ul>
+        <li><b>Introduce yourselves:</b> Each player says their job role — but Culprits can lie about it!</li>
+        <li><b>The Crime:</b> Find out what terrible thing happened.</li>
+        <li><b>Discussion:</b> Talk and share your suspicions.</li>
+        <li><b>Clue:</b> A clue is revealed after each vote round.</li>
+        <li><b>Vote:</b> Everyone votes for who they suspect. Highest vote gets eliminated.</li>
+      </ul>
+
+      <h3> Winning</h3>
+      <ul>
+        <li><b>Innocents win</b> when all Culprits are eliminated.</li>
+        <li><b>Culprits win</b> when they equal or outnumber the innocents remaining.</li>
+      </ul>
+
+      <h3> Tiebreaker</h3>
+      <p>If votes are tied, the group must agree on someone to eliminate (rock-paper-scissors, flip a coin, argue louder — dealer's choice).</p>
+
+      <h3> Tips</h3>
+      <ul>
+        <li>Watch body language and inconsistencies in stories.</li>
+        <li>Culprits: stay calm, deflect suspicion, blend in.</li>
+        <li>Innocents: use clues wisely, trust your gut.</li>
+      </ul>
+    </div>
+    <div class="flex-center">
+      <button class="btn btn-primary" onclick="closeModal('howToPlay')">Got it!</button>
+    </div>
+  </div>
+</div>
+
+<div class="content">
+
+
+<div class="screen active fade-in" id="screen-welcome">
+  <div class="game-logo">
+    <h1>The Culprit</h1>
+    <div class="subtitle">Can you find the guilty one?</div>
+  </div>
+  <div class="card center">
+    <p style="font-size:1.1rem; color:var(--ink-light); margin-bottom:20px; font-style:italic;">
+      A crime has been committed. Someone among you is responsible.<br>Figure it out — before it's too late.
+    </p>
+    <button class="btn btn-primary" onclick="goTo('screen-setup')">Start Game</button>
+    <span style="margin: 0 10px; color:var(--ink-light)">|</span>
+    <button class="btn btn-secondary" onclick="openModal('howToPlay')">How to Play</button>
+  </div>
+</div>
+
+
+<div class="screen fade-in" id="screen-setup">
+  <div class="game-logo" style="margin-bottom:15px">
+    <h1 style="font-size:2rem">The Culprit</h1>
+  </div>
+  <div class="card">
+    <div class="setup-section">
+      <label class="setup-label">Crew Name</label>
+      <input type="text" id="crewName" placeholder="e.g. The Friday Night Crew" maxlength="40">
+    </div>
+    <div class="setup-section">
+      <label class="setup-label">Number of Players</label>
+      <div class="count-selector" id="countSelector">
+        <button class="count-btn" onclick="selectCount(4)">4</button>
+        <button class="count-btn" onclick="selectCount(5)">5</button>
+        <button class="count-btn" onclick="selectCount(6)">6</button>
+        <button class="count-btn" onclick="selectCount(7)">7</button>
+        <button class="count-btn" onclick="selectCount(8)">8</button>
+        <button class="count-btn" onclick="selectCount(9)">9</button>
+        <button class="count-btn" onclick="selectCount(10)">10</button>
+      </div>
+    </div>
+    <div class="setup-section" id="playerNamesSection" style="display:none">
+      <label class="setup-label">Player Names</label>
+      <div class="player-inputs" id="playerInputs"></div>
+    </div>
+    <div class="flex-center" style="margin-top:15px">
+      <button class="btn btn-secondary" onclick="goTo('screen-welcome')">Back</button>
+      <button class="btn btn-primary" onclick="startGame()">Deal the Cards!</button>
+    </div>
+  </div>
+</div>
+
+
+<div class="screen fade-in" id="screen-roles">
+  <div class="card" style="max-width:500px; text-align:center">
+    <p class="screen-title">
+      <span id="roleRevealTopText"></span>
+    </p>
+    <div id="roleCardContainer"></div>
+    <div id="roleRevealActions" class="mt-20"></div>
+  </div>
+</div>
+
+
+<div class="screen fade-in" id="screen-introduce">
+  <div class="card">
+    <h2 class="screen-title">Time to Introduce Yourselves!</h2>
+    <div class="info-box">
+      <p style="font-size:1rem; line-height:1.6; text-align:center">
+        Everyone tells the group their job role.<br>
+        <strong style="color:var(--crimson)">Culprits — you may lie about what you do!</strong><br>
+        <span style="font-style:italic; color:var(--ink-light)">Don't say you're a Culprit. Just say a job.</span>
+      </p>
+    </div>
+    <div class="flex-center">
+      <button class="btn btn-primary" onclick="goTo('screen-crime')">Reveal the Crime →</button>
+    </div>
+  </div>
+</div>
+
+
+<div class="screen fade-in" id="screen-crime">
+  <div class="card">
+    <h2 class="screen-title">The Crime</h2>
+    <div class="crime-title" id="crimeDisplay"></div>
+    <div class="flex-center">
+      <button class="btn btn-primary" onclick="goTo('screen-discuss')">Start the Investigation →</button>
+    </div>
+  </div>
+</div>
+
+
+<div class="screen fade-in" id="screen-discuss">
+  <div class="card">
+    <div class="round-info" id="roundInfoBar"></div>
+    <h2 class="screen-title" id="discussTitle">Initial Discussion</h2>
+    <div class="info-box" id="discussContent"></div>
+    <div class="flex-center">
+      <button class="btn btn-primary" id="discussNextBtn" onclick="showClue()">Reveal Clue →</button>
+    </div>
+  </div>
+</div>
+
+
+<div class="screen fade-in" id="screen-clue">
+  <div class="card">
+    <div class="round-info" id="clueRoundInfo"></div>
+    <div class="clue-box">
+      <div class="clue-number" id="clueNumber"></div>
+      <div id="clueText"></div>
+    </div>
+    <div class="flex-center">
+      <button class="btn btn-primary" onclick="goToVote()">Vote Round →</button>
+    </div>
+  </div>
+</div>
+
+
+<div class="screen fade-in" id="screen-vote">
+  <div class="card">
+    <div class="round-info" id="voteRoundInfo"></div>
+    <h2 class="screen-title">Vote</h2>
+    <p style="text-align:center; color:var(--ink-light); margin-bottom:5px; font-style:italic;" id="voteSubtitle">Who do you suspect the most?</p>
+    <div id="votingPlayerLabel" style="text-align:center; font-family:'Playfair Display',serif; font-weight:700; color:var(--crimson); font-size:1.1rem; margin-bottom:10px;"></div>
+    <div class="vote-grid" id="voteGrid"></div>
+    <div class="flex-center">
+      <button class="btn btn-primary btn-disabled" id="voteConfirmBtn" onclick="confirmVote()">Confirm Vote</button>
+    </div>
+  </div>
+</div>
+
+
+<div class="screen fade-in" id="screen-voteResult">
+  <div class="card">
+    <div id="voteResultContent"></div>
+    <div class="flex-center" id="voteResultActions"></div>
+  </div>
+</div>
+
+
+<div class="screen fade-in" id="screen-gameover">
+  <div class="card">
+    <div id="gameoverContent"></div>
+    <div class="flex-center">
+      <button class="btn btn-primary" onclick="playAgain()">Play Another Round</button>
+      <button class="btn btn-secondary" onclick="goTo('screen-welcome')">End Session</button>
+    </div>
+  </div>
+</div>
+
+
+<div class="screen fade-in" id="screen-story">
+  <div class="card">
+    <h2 class="screen-title">The Full Story</h2>
+    <div class="story-box" id="storyContent"></div>
+    <div class="flex-center">
+      <button class="btn btn-primary" onclick="playAgain()">Play Another Round</button>
+      <button class="btn btn-secondary" onclick="goTo('screen-welcome')">End Session</button>
+    </div>
+  </div>
+</div>
+
+</div>
+</div>
+
+<script>
+
+const SCENARIOS = {
+  4: [
+    {
+      crime: "Someone stole Grandma Fawzia's secret cookie recipe the night before the village baking contest.",
+      roles: [
+        { job: "The Delivery Guy" },
+        { job: "The Neighborhood Gossip" },
+        { job: "The Baker's Apprentice" },
+        { job: "The Retired Librarian" }
+      ],
+      culprits: [2],
+      clues: [
+        "Clue #1: Flour was found on the kitchen window latch — and only one person had been near the kitchen that evening.",
+        "Clue #2: The recipe was written on pink paper and someone was seen tucking a pink slip into their bag.",
+        "Clue #3: A witness heard humming from Grandma's kitchen — the same tune the Baker's Apprentice always hums while working."
+      ],
+      story: "The Baker's Apprentice had always dreamed of winning the baking contest but lacked the secret recipe. While delivering supplies, they slipped through the kitchen window, found the handwritten recipe, and hid it in their apron. The flour on the window gave them away."
+    },
+    {
+      crime: "Mr. Hatem's pet parrot Kiwi was found mysteriously silent — someone fed it hot chili peppers as a \"prank.\"",
+      roles: [
+        { job: "The Landlord" },
+        { job: "The Dog Walker" },
+        { job: "The Food Blogger" },
+        { job: "The Chess Club President" }
+      ],
+      culprits: [2],
+      clues: [
+        "Clue #1: An empty chili pepper bag was found near the bird's cage — it was a rare imported brand sold only at one specialty store.",
+        "Clue #2: The person near the cage had chili stains on their fingers, which they tried to hide with gloves indoors.",
+        "Clue #3: The Food Blogger had posted a 'parrot taste test' video idea on their blog three days earlier."
+      ],
+      story: "The Food Blogger wanted viral content and thought a parrot tasting spicy food would be hilarious. They snuck the imported chili peppers into Kiwi's bowl. The stained fingers, the blog post idea, and the rare pepper bag all pointed straight at them."
+    },
+    {
+      crime: "The office mini-fridge was raided overnight — someone ate Ahmed's very clearly labeled birthday cake slice.",
+      roles: [
+        { job: "The IT Technician" },
+        { job: "The Accountant" },
+        { job: "The Intern" },
+        { job: "The Janitor" }
+      ],
+      culprits: [1],
+      clues: [
+        "Clue #1: The fridge door was opened at 2:47 AM according to the smart fridge log. Only one person badged into the building that night.",
+        "Clue #2: Frosting crumbs were found near the Accountant's desk the next morning.",
+        "Clue #3: The Accountant was spotted stress-eating earlier that day, muttering about 'month-end closing numbers.'"
+      ],
+      story: "The Accountant was stuck late doing month-end reports, stress peaked, and the clearly labeled birthday cake became an irresistible target. They figured no one would notice. They noticed."
+    },
+    {
+      crime: "Someone replaced all the salt in the canteen with sugar — every single coffee that morning tasted like a dessert.",
+      roles: [
+        { job: "The Gym Instructor" },
+        { job: "The Security Guard" },
+        { job: "The Marketing Manager" },
+        { job: "The Barista" }
+      ],
+      culprits: [0],
+      clues: [
+        "Clue #1: The salt swap happened between 6–7 AM. The gym opens at 6 AM and one person always arrives early.",
+        "Clue #2: A sugar packet trail was found leading from the gym storage room to the canteen.",
+        "Clue #3: The Gym Instructor had been publicly complaining about 'too much salt in everyone's diet' for a week."
+      ],
+      story: "The Gym Instructor had a wellness obsession and genuinely believed they were helping people by eliminating salt. They snuck into the canteen early and made the swap. Their health rant, the sugar trail from the gym, and early-arrival records sealed their fate."
+    },
+    {
+      crime: "The school's beloved class hamster, Mr. Peanut, was found on the roof. Nobody knows how he got there.",
+      roles: [
+        { job: "The Art Teacher" },
+        { job: "The Cafeteria Lady" },
+        { job: "The School Janitor" },
+        { job: "The Vice Principal" }
+      ],
+      culprits: [3],
+      clues: [
+        "Clue #1: Roof access requires a master key. Only two people have it — the Janitor and the Vice Principal.",
+        "Clue #2: The hamster cage has tiny footprints leading out... and one large footprint from a very distinctive formal shoe.",
+        "Clue #3: The Vice Principal had been overheard saying, 'That hamster has caused more disruption than any student I've ever known.'"
+      ],
+      story: "The Vice Principal had enough of Mr. Peanut escaping class and distracting students. In a moment of frustration, they used their master key, went to the classroom after hours, and relocated the hamster to the roof — thinking he'd enjoy the fresh air and stay out of trouble."
+    },
+    {
+      crime: "Someone anonymously submitted a very embarrassing photo of the boss to the company newsletter — and it got published.",
+      roles: [
+        { job: "The Graphic Designer" },
+        { job: "The Receptionist" },
+        { job: "The HR Manager" },
+        { job: "The Sales Lead" }
+      ],
+      culprits: [0],
+      clues: [
+        "Clue #1: The submission was made from an anonymous email — but the file metadata showed it was exported from a specific design software.",
+        "Clue #2: The photo had been edited with a very particular filter — one only the Graphic Designer's laptop had installed.",
+        "Clue #3: The Graphic Designer had just received a very harsh feedback email from the boss about their work — the same day as the submission."
+      ],
+      story: "The Graphic Designer had been publicly humiliated by the boss's feedback and decided revenge was best served with Photoshop. They edited the embarrassing photo, stripped their name from the metadata (but forgot the software tag), and submitted it anonymously. Art is a weapon."
+    },
+    {
+      crime: "Someone ate the last slice of Mama Nadia's homemade koshari at the family reunion — before the guests arrived.",
+      roles: [
+        { job: "The Favorite Cousin" },
+        { job: "The Uncle Who's Always Late" },
+        { job: "The Neighbor Who Got Invited" },
+        { job: "The Teenager On Their Phone" }
+      ],
+      culprits: [3],
+      clues: [
+        "Clue #1: The kitchen security camera showed a figure sneaking in at exactly 12:03 PM — hunched over and moving suspiciously fast.",
+        "Clue #2: Tomato sauce stains were found on a phone screen — and a post went up on social media saying 'sneaky snack ' at 12:05 PM.",
+        "Clue #3: The Teenager had been heard saying the koshari was 'actually lowkey fire' — a rare compliment from them."
+      ],
+      story: "The Teenager put their phone down just long enough to demolish the koshari, immediately took a photo for their story, and went back to scrolling. The post timestamp, the sauce on the phone, and their own social media story were their undoing."
+    },
+    {
+      crime: "Someone loosened all the screws on the office chair belonging to the team lead — causing a spectacular collapse during a meeting.",
+      roles: [
+        { job: "The Quiet Coder" },
+        { job: "The Meeting Enthusiast" },
+        { job: "The New Joiner" },
+        { job: "The Always-On-Time Guy" }
+      ],
+      culprits: [1],
+      clues: [
+        "Clue #1: A small screwdriver was found in the meeting room plant pot. It had a sticker from a specific stationery store on it.",
+        "Clue #2: Someone had stayed back 'to organize the meeting room' the night before — and was seen fiddling under the chair.",
+        "Clue #3: The Meeting Enthusiast had complained loudly that the team lead 'always cuts my brilliant ideas short mid-sentence.'"
+      ],
+      story: "The Meeting Enthusiast had one too many ideas cut short and decided the team lead needed a humbling moment. They stayed late, used their personal screwdriver (with the recognizable sticker), and loosened every screw on the chair. The collapse was more spectacular than planned."
+    },
+    {
+      crime: "The building's elevator music was mysteriously replaced with very loud, dramatic opera — and nobody could figure out how to change it back.",
+      roles: [
+        { job: "The Building Manager" },
+        { job: "The Opera Lover On Floor 7" },
+        { job: "The IT Support Guy" },
+        { job: "The Night Cleaner" }
+      ],
+      culprits: [1],
+      clues: [
+        "Clue #1: The music system requires a specific access code. The code log shows it was changed at 11:47 PM on Tuesday.",
+        "Clue #2: An opera playlist titled 'Elevator Upgrade ' was found on a streaming account registered to someone on Floor 7.",
+        "Clue #3: The Opera Lover had sent a formal written complaint three weeks prior demanding 'more culturally enriching elevator ambiance.'"
+      ],
+      story: "The Opera Lover had tried formal channels — the complaint went ignored. So they waited until late Tuesday, used their amateur IT knowledge (and a sticky note with the code they'd spotted once), and replaced the playlist themselves. They considered it an upgrade."
+    },
+    {
+      crime: "Someone sent a company-wide email from the CEO's account wishing everyone a 'Magical Monday' with three rainbow emojis.",
+      roles: [
+        { job: "The IT Admin" },
+        { job: "The Social Media Coordinator" },
+        { job: "The Executive Assistant" },
+        { job: "The Bored Intern" }
+      ],
+      culprits: [3],
+      clues: [
+        "Clue #1: The email was sent from a logged-in session on a guest laptop — in the intern bay.",
+        "Clue #2: The phrase 'Magical Monday' appeared in the intern's personal Twitter drafts from the same week.",
+        "Clue #3: The Bored Intern had been overheard saying, 'Honestly someone should just make this place more fun.'"
+      ],
+      story: "The Bored Intern found the CEO's laptop open for exactly four minutes during a coffee run, saw the opportunity, and acted purely on chaos energy. The phrase came from their own draft tweets. Zero regrets, maximum consequences."
+    }
+  ],
+  5: [
+    {
+      crime: "The neighborhood's legendary mango tree had ALL its mangoes picked overnight — before anyone else could get any.",
+      roles: [
+        { job: "The Fruit Vendor" },
+        { job: "The Building Super" },
+        { job: "The Retired Colonel" },
+        { job: "The Pilates Instructor" },
+        { job: "The Dentist's Receptionist" }
+      ],
+      culprits: [0, 3],
+      clues: [
+        "Clue #1: A large wicker basket was found near the tree with two different sets of gloves inside.",
+        "Clue #2: The mangoes appeared at the Fruit Vendor's stall the very next morning — suspiciously early.",
+        "Clue #3: Security footage shows two figures at 3 AM — one short with quick movements, one tall moving with athletic grace."
+      ],
+      story: "The Fruit Vendor and the Pilates Instructor had a secret business deal — the Vendor would sell the mangoes, the Instructor would get a cut for the labor. They'd been planning it for weeks, even coordinating with matching wicker baskets. It was organized mango crime."
+    },
+    {
+      crime: "Someone secretly switched the office Wi-Fi password and refused to share it — holding internet access hostage.",
+      roles: [
+        { job: "The Network Engineer" },
+        { job: "The Sales Director" },
+        { job: "The Facilities Manager" },
+        { job: "The Junior Developer" },
+        { job: "The Office Manager" }
+      ],
+      culprits: [1, 4],
+      clues: [
+        "Clue #1: The router's admin panel was accessed twice — from two different devices on the same evening.",
+        "Clue #2: The new password contained the words 'TargetMet2024' — a phrase the Sales Director had used in their last company presentation.",
+        "Clue #3: The Office Manager had been spotted writing something on a sticky note and handing it to the Sales Director with a wink."
+      ],
+      story: "The Sales Director and Office Manager had hatched a plan to force everyone to attend the Q3 results meeting — by holding the Wi-Fi hostage until attendance was confirmed. The password was literally from the Sales Director's deck. It worked. Everyone showed up."
+    },
+    {
+      crime: "The entire supply of coffee pods in the office was replaced with decaf — without anyone being told.",
+      roles: [
+        { job: "The Head of Marketing" },
+        { job: "The Supply Chain Analyst" },
+        { job: "The Wellness Coach" },
+        { job: "The Part-Time Barista" },
+        { job: "The Finance Associate" }
+      ],
+      culprits: [0, 2],
+      clues: [
+        "Clue #1: An order receipt for 200 decaf pods was found addressed to the office — placed on a personal credit card.",
+        "Clue #2: The Wellness Coach had circulated a 'caffeine reduction initiative' email the previous week that nobody took seriously.",
+        "Clue #3: The Head of Marketing was seen exchanging knowing looks with the Wellness Coach after the third person complained about headaches."
+      ],
+      story: "The Head of Marketing was quietly suffering from anxiety and had been convinced by the Wellness Coach that caffeine was the culprit. Together they ordered the decaf pods and made the swap, fully believing they were doing the office a favor. The knowing looks were their undoing."
+    },
+    {
+      crime: "Someone reorganized the entire school library alphabetically by the author's first name — not last name — causing total chaos.",
+      roles: [
+        { job: "The Substitute Teacher" },
+        { job: "The Student Council President" },
+        { job: "The Chess Club Vice President" },
+        { job: "The Librarian's Pet" },
+        { job: "The Drama Club Director" }
+      ],
+      culprits: [1, 4],
+      clues: [
+        "Clue #1: The reorganization happened on a Saturday — only the Student Council President and Drama Club Director had weekend building access.",
+        "Clue #2: A handwritten index card system by first name was found — in two distinct handwriting styles.",
+        "Clue #3: The Drama Club Director had just finished staging a play where a character reorganizes a library 'to make it more human.'"
+      ],
+      story: "The Drama Club Director got inspired mid-rehearsal, recruited the Student Council President (who would agree to literally anything for extra-curricular credits), and they spent all Saturday reorganizing. The handwriting cards were their collaborative art project that the librarian did not appreciate."
+    },
+    {
+      crime: "The rooftop garden's prize-winning cactus collection was rearranged into a shape that, from the street, spelled a bad word.",
+      roles: [
+        { job: "The Building Architect" },
+        { job: "The Weekend Gardener" },
+        { job: "The Photography Enthusiast" },
+        { job: "The Annoying Downstairs Neighbor" },
+        { job: "The Delivery App Driver" }
+      ],
+      culprits: [2, 3],
+      clues: [
+        "Clue #1: The rearrangement required someone with rooftop access AND someone who knew the exact street-level view angle.",
+        "Clue #2: The Photography Enthusiast had taken drone shots of the building that week — establishing the perfect viewing angle.",
+        "Clue #3: The Annoying Downstairs Neighbor had a long-running feud with the Weekend Gardener over rooftop noise complaints."
+      ],
+      story: "The Annoying Downstairs Neighbor wanted petty revenge on the Weekend Gardener. The Photography Enthusiast found it hilarious and offered their drone expertise to ensure maximum visibility from street level. A beautiful collaboration of spite."
+    },
+    {
+      crime: "Someone submitted a fake resignation letter to HR under the name of the most popular employee — causing a company-wide panic.",
+      roles: [
+        { job: "The Team Lead" },
+        { job: "The HR Coordinator" },
+        { job: "The Jealous Colleague" },
+        { job: "The IT Help Desk Guy" },
+        { job: "The Project Manager" }
+      ],
+      culprits: [2, 3],
+      clues: [
+        "Clue #1: The letter was submitted via the internal HR portal — from an IP address traced to the IT Help Desk station.",
+        "Clue #2: The letter used a very specific phrase — 'pursuing other adventures' — which the Jealous Colleague had been using sarcastically in team chats for weeks.",
+        "Clue #3: The IT Help Desk Guy had 'accidentally' left the terminal unlocked during the Jealous Colleague's scheduled IT session."
+      ],
+      story: "The Jealous Colleague drafted the resignation letter and the IT Help Desk Guy provided the access — leaving the terminal 'accidentally' unlocked at a convenient time. The sarcastic phrase in the letter was lifted directly from their own team chat messages. Classic self-incrimination."
+    },
+    {
+      crime: "The company's mascot costume went missing — and was later found being worn at a rival company's annual gala.",
+      roles: [
+        { job: "The Brand Manager" },
+        { job: "The Event Planner" },
+        { job: "The Former Employee" },
+        { job: "The Security Guard" },
+        { job: "The Logistics Coordinator" }
+      ],
+      culprits: [1, 4],
+      clues: [
+        "Clue #1: The costume was checked out of the storage room by two people on the same afternoon — the sign-out log had two signatures.",
+        "Clue #2: The rival company's gala was planned and catered by an external event firm — with a very familiar Events Planner on the contract.",
+        "Clue #3: A Logistics Coordinator had arranged a 'special delivery' that went to the rival company's venue on the day of the gala."
+      ],
+      story: "The Event Planner was moonlighting for the rival company's gala and thought the mascot costume would make things more memorable. The Logistics Coordinator arranged the secret delivery as a favor. They both signed the checkout log like amateurs."
+    },
+    {
+      crime: "All the chairs in the conference room were replaced with yoga balls — on the morning of the most important board meeting of the year.",
+      roles: [
+        { job: "The Administrative Assistant" },
+        { job: "The Chief of Staff" },
+        { job: "The Ergonomics Consultant" },
+        { job: "The Mailroom Supervisor" },
+        { job: "The Board Member's Intern" }
+      ],
+      culprits: [0, 2],
+      clues: [
+        "Clue #1: 12 yoga balls were delivered the previous day — addressed to the Ergonomics Consultant and signed for by the Administrative Assistant.",
+        "Clue #2: The Ergonomics Consultant had submitted a 'Dynamic Seating Proposal' three months prior that was unanimously rejected.",
+        "Clue #3: The Administrative Assistant had access to the conference room overnight and was seen arriving unusually early with a cart."
+      ],
+      story: "The Ergonomics Consultant never forgave the board for rejecting the Dynamic Seating Proposal. The Administrative Assistant thought it was genuinely a good idea AND found it hilarious. They worked together to swap out every chair before dawn. The board meeting was unforgettable."
+    },
+    {
+      crime: "Someone reprogrammed the smart office thermostat to play a specific sound effect every time the temperature was changed.",
+      roles: [
+        { job: "The IoT Developer" },
+        { job: "The Facilities Director" },
+        { job: "The Prankster Intern" },
+        { job: "The Legal Counsel" },
+        { job: "The Data Analyst" }
+      ],
+      culprits: [0, 2],
+      clues: [
+        "Clue #1: The thermostat's firmware was updated remotely — from a coding environment only the IoT Developer uses.",
+        "Clue #2: The sound effect was a very specific comedic sound — taken from a viral video the Prankster Intern had been sharing in the group chat all week.",
+        "Clue #3: The IoT Developer and Prankster Intern were seen laughing uncontrollably every time someone walked past the thermostat."
+      ],
+      story: "The IoT Developer had the skills, the Prankster Intern had the vision. They collaborated on a firmware update that added a custom sound trigger — the same sound from the viral video. They stood near the thermostat for three hours waiting for reactions. Worth it."
+    },
+    {
+      crime: "Someone anonymously entered the company's executive team in a local pub quiz — without telling any of them — and they won.",
+      roles: [
+        { job: "The Communications Manager" },
+        { job: "The Head of Strategy" },
+        { job: "The Executive Coordinator" },
+        { job: "The Marketing Associate" },
+        { job: "The Innovation Lead" }
+      ],
+      culprits: [0, 3],
+      clues: [
+        "Clue #1: The pub quiz registration was made using a company email alias that only the Communications Manager had access to.",
+        "Clue #2: The team name on the registration was 'The Untapped Synergies' — a joke phrase that had appeared in a Marketing Associate email chain that week.",
+        "Clue #3: Both suspects had attended the pub quiz 'as spectators' — sitting conveniently close to the executive table."
+      ],
+      story: "The Communications Manager and Marketing Associate genuinely thought it would be hilarious and great PR. They registered the executives, coined the team name from their own email chain, and watched from a safe distance. When the executives won, they nearly blew their cover celebrating."
+    }
+  ],
+  6: [
+    {
+      crime: "Someone switched all the name tags at the annual neighborhood association meeting — causing everyone to be introduced as the wrong person.",
+      roles: [
+        { job: "The Name Tag Volunteer" },
+        { job: "The Association Treasurer" },
+        { job: "The Grumpy Homeowner" },
+        { job: "The Enthusiastic Newcomer" },
+        { job: "The Professional Mediator" },
+        { job: "The Retired Schoolteacher" }
+      ],
+      culprits: [0, 2],
+      clues: [
+        "Clue #1: The name tags were set up an hour before the meeting — the Name Tag Volunteer had sole access during that time.",
+        "Clue #2: The switching was specifically targeted — all the people who had voted against the Grumpy Homeowner's parking proposal had their tags swapped.",
+        "Clue #3: The Grumpy Homeowner was seen whispering to the Name Tag Volunteer before the event — and both were smiling about something."
+      ],
+      story: "The Grumpy Homeowner had lost the parking vote badly and wanted to sow chaos at the next meeting. The Name Tag Volunteer, their only friend in the building, was convinced this was harmless fun. The targeted swaps made it very clear who was behind it."
+    },
+    {
+      crime: "The entire company Slack workspace was flooded with 2,000 GIFs in the span of 10 minutes during a crucial product launch.",
+      roles: [
+        { job: "The DevOps Engineer" },
+        { job: "The Product Manager" },
+        { job: "The Growth Hacker" },
+        { job: "The Community Manager" },
+        { job: "The QA Tester" },
+        { job: "The Backend Developer" }
+      ],
+      culprits: [2, 4],
+      clues: [
+        "Clue #1: The GIF flood was executed via an automated bot — the bot's code was found in a private GitHub repo belonging to the QA Tester.",
+        "Clue #2: The GIFs were all from a specific animated series that the Growth Hacker had been referencing in every meeting for weeks.",
+        "Clue #3: Both suspects had been vocally against the product launch timeline, saying it was 'rushed and going to be a disaster.'"
+      ],
+      story: "The QA Tester built the bot after finding 47 critical bugs. The Growth Hacker supplied the GIF library (from their favorite series) and moral support. They genuinely believed derailing the launch was a public service. The code commit timestamp made it airtight."
+    },
+    {
+      crime: "Someone replaced all the motivational posters in the office with posters of the exact same motivational quotes — but with a tiny typo in each one.",
+      roles: [
+        { job: "The Creative Director" },
+        { job: "The Copywriter" },
+        { job: "The Office Coordinator" },
+        { job: "The Brand Strategist" },
+        { job: "The Typography Nerd" },
+        { job: "The Printer Guy" }
+      ],
+      culprits: [1, 4],
+      clues: [
+        "Clue #1: The replacement posters were printed on the office printer at 11 PM — the print log shows a 47-page job from one login.",
+        "Clue #2: The typos were incredibly specific — each one replaced a letter with a visually similar one. Only someone with typography knowledge would think of that.",
+        "Clue #3: The Copywriter had a long-standing grudge against motivational posters, calling them 'the intellectual equivalent of elevator music' in a team meeting."
+      ],
+      story: "The Copywriter hated the posters. The Typography Nerd found the project artistically compelling. Together they designed near-perfect replicas with subtle typos (using similar-looking Unicode characters) and hung them overnight. Nobody noticed for three weeks."
+    },
+    {
+      crime: "The school principal's carefully maintained hair piece was discovered missing — later found decorating the school's trophy case.",
+      roles: [
+        { job: "The History Teacher" },
+        { job: "The Drama Teacher" },
+        { job: "The Student Who Knows Everything" },
+        { job: "The Janitor Who Sees Everything" },
+        { job: "The School Photographer" },
+        { job: "The Lunch Lady" }
+      ],
+      culprits: [1, 2],
+      clues: [
+        "Clue #1: The trophy case was locked — only two keys exist. One belongs to the principal, one to the Drama Teacher (for props storage).",
+        "Clue #2: The hair piece was arranged in the trophy case with a small label reading 'Champion of Confidence, 2024' — the kind of dramatic touch only one type of person would add.",
+        "Clue #3: The Student Who Knows Everything had been seen near the principal's office coat rack earlier that day, 'accidentally' bumping into it."
+      ],
+      story: "The Student Who Knows Everything 'borrowed' the hair piece from the coat rack. The Drama Teacher had the trophy case key and found the display idea theatrically brilliant. The label was the Drama Teacher's final touch. They both maintain it was a tribute."
+    },
+    {
+      crime: "All the nutrition labels on the snacks in the company kitchen were swapped — so the cookies said 'celery sticks' and the celery said 'double chocolate.'",
+      roles: [
+        { job: "The Nutritionist" },
+        { job: "The Product Development Chef" },
+        { job: "The Data Scientist" },
+        { job: "The Head of HR" },
+        { job: "The Supply Chain Manager" },
+        { job: "The Intern Who Just Started" }
+      ],
+      culprits: [2, 5],
+      clues: [
+        "Clue #1: The labels were replaced using a label printer — the print history on the device shows it was used after 7 PM on a Wednesday.",
+        "Clue #2: The label design matched a template found on the new intern's laptop — still open in a browser tab during a routine IT check.",
+        "Clue #3: The Data Scientist had recently published an internal report on 'the psychology of food labeling and decision-making' and found the whole thing fascinating."
+      ],
+      story: "The Data Scientist proposed the label swap as a 'live experiment' on food psychology. The new Intern, eager to impress and make friends, thought this was a brilliant way to fit in. They stayed late, printed the labels, and made the swap. The experiment yielded significant results and two disciplinary warnings."
+    },
+    {
+      crime: "Someone anonymously signed the entire department up for a competitive salsa dancing class — during work hours.",
+      roles: [
+        { job: "The Department Head" },
+        { job: "The Social Committee Lead" },
+        { job: "The Timid Analyst" },
+        { job: "The Dancing-Obsessed Colleague" },
+        { job: "The Calendar Admin" },
+        { job: "The Operations Lead" }
+      ],
+      culprits: [3, 4],
+      clues: [
+        "Clue #1: The calendar invite was sent from the Calendar Admin's account — at an odd hour when they claimed to be asleep.",
+        "Clue #2: The salsa class venue was the exact studio the Dancing-Obsessed Colleague had been raving about for months.",
+        "Clue #3: The Calendar Admin's browser history (from a work audit) showed the exact registration page for the salsa class — three days before it appeared on the calendar."
+      ],
+      story: "The Dancing-Obsessed Colleague had been trying to get people into salsa for years. The Calendar Admin finally cracked under the enthusiasm and agreed to 'help.' The Calendar Admin's browser history betrayed the planning, and the studio was a dead giveaway."
+    },
+    {
+      crime: "The company's official Twitter account tweeted a deeply passionate 400-word opinion about pineapple pizza — fully formatted with arguments and counterarguments.",
+      roles: [
+        { job: "The Social Media Manager" },
+        { job: "The Bored Night-Shift Employee" },
+        { job: "The CEO's Personal Assistant" },
+        { job: "The Digital Strategist" },
+        { job: "The Brand Guardian" },
+        { job: "The Intern On Social Media Duty" }
+      ],
+      culprits: [1, 5],
+      clues: [
+        "Clue #1: The tweet was posted at 2:37 AM — during the night shift. Only the Bored Night-Shift Employee and one other person were credentialed to post at that hour.",
+        "Clue #2: The tweet's argument structure — thesis, antithesis, synthesis — was identical to an essay style the Intern had mentioned using in their university classes.",
+        "Clue #3: Both suspects had been involved in a heated pineapple pizza debate in the company Slack earlier that day."
+      ],
+      story: "The Bored Night-Shift Employee had the access and the time. The Intern had the credentials as Social Media Duty cover and the academic essay structure. After losing the Slack debate, they decided to take it to the official account. The argument was, objectively, very well structured."
+    },
+    {
+      crime: "The office plant — named Gerald by consensus — was moved to the server room, where it mysteriously thrived.",
+      roles: [
+        { job: "The Plant Whisperer Colleague" },
+        { job: "The Server Room Technician" },
+        { job: "The Floor Manager" },
+        { job: "The Remote Worker Visiting That Week" },
+        { job: "The Facilities Officer" },
+        { job: "The New Grad Who Loved Gerald" }
+      ],
+      culprits: [0, 1],
+      clues: [
+        "Clue #1: Server room access requires a keycard. The log shows two entries on the night in question — both matching known cardholders.",
+        "Clue #2: Gerald was found positioned directly under a warm air vent — exactly the placement a plant expert would choose.",
+        "Clue #3: The Plant Whisperer had loudly declared that Gerald was 'being slowly murdered by the air conditioning in the open office.'"
+      ],
+      story: "The Plant Whisperer genuinely feared for Gerald's life and convinced the Server Room Technician — who also had a soft spot for Gerald — to provide access. The placement under the warm vent was deliberate and knowledgeable. Gerald did, in fact, thrive."
+    },
+    {
+      crime: "Every single presentation slide in the company-wide all-hands deck had the font changed to Comic Sans — one hour before the meeting.",
+      roles: [
+        { job: "The Design Lead" },
+        { job: "The Presentation Tech" },
+        { job: "The Passive-Aggressive Colleague" },
+        { job: "The Executive Sponsor" },
+        { job: "The Head of People" },
+        { job: "The Clumsy Volunteer" }
+      ],
+      culprits: [2, 5],
+      clues: [
+        "Clue #1: The file was edited from a shared drive — the version history shows the edit was made from two simultaneous sessions.",
+        "Clue #2: The Passive-Aggressive Colleague had been telling anyone who'd listen that 'this all-hands is a waste of everyone's time.'",
+        "Clue #3: The Clumsy Volunteer had been given edit access 'to help add photos' — and their session was open at exactly the same time as the font change."
+      ],
+      story: "The Passive-Aggressive Colleague orchestrated the Comic Sans switch as a statement. The Clumsy Volunteer didn't fully understand what they were agreeing to help with but got caught up in the moment. The simultaneous sessions in the version history were definitive proof."
+    },
+    {
+      crime: "The office building's elevator button for Floor 13 was secretly relabeled as Floor 12B — causing mass confusion for two weeks.",
+      roles: [
+        { job: "The Superstitious Accountant" },
+        { job: "The Building Maintenance Worker" },
+        { job: "The Skeptical Engineer" },
+        { job: "The Feng Shui Consultant" },
+        { job: "The Newly Hired Manager On Floor 13" },
+        { job: "The Security Desk Guy" }
+      ],
+      culprits: [0, 3],
+      clues: [
+        "Clue #1: The elevator panel modification required building access after hours — the Maintenance Worker confirmed it was not a sanctioned repair.",
+        "Clue #2: The relabeled button was done with a custom-printed sticker — the design matched a label printer found in the Feng Shui Consultant's office.",
+        "Clue #3: The Superstitious Accountant had submitted a formal (and declined) request to have Floor 13 officially renamed — citing bad luck data."
+      ],
+      story: "The Superstitious Accountant and the Feng Shui Consultant were deeply aligned on the Floor 13 problem. After the formal request was rejected, they took matters into their own hands — the Feng Shui Consultant designed and printed the sticker, the Accountant applied it. The label printer was the fatal clue."
+    }
+  ],
+  7: [
+    {
+      crime: "The neighborhood's annual chili cook-off judges were bribed with free movie tickets — so the worst chili in history won first place.",
+      roles: [
+        { job: "The Amateur Chef" },
+        { job: "The Film Buff" },
+        { job: "The Contest Organizer" },
+        { job: "The Suspiciously Confident Cook" },
+        { job: "The Judge's Neighbor" },
+        { job: "The Movie Theater Manager" },
+        { job: "The Food Critic" }
+      ],
+      culprits: [3, 1, 5],
+      clues: [
+        "Clue #1: The movie tickets used to bribe the judges were traced to a bulk purchase made from the Movie Theater Manager's employee account.",
+        "Clue #2: The Film Buff was seen distributing small envelopes to two of the three judges exactly 30 minutes before tasting began.",
+        "Clue #3: The Suspiciously Confident Cook had zero prior cooking awards but had purchased a trophy display case the week before the contest.",
+        "Clue #4: All three culprits were in the same group chat titled 'Operation Chili Win' — which a judge's kid accidentally screenshotted."
+      ],
+      story: "The Suspiciously Confident Cook had terrible chili but great ambition. The Film Buff had industry connections via the Movie Theater Manager. Together they designed the bribery scheme using free premium movie tickets. The group chat was the most amateur operational security in crime history."
+    },
+    {
+      crime: "A very embarrassing karaoke video of the company CEO was uploaded to the company's public YouTube channel — and got 40,000 views before anyone noticed.",
+      roles: [
+        { job: "The Video Editor" },
+        { job: "The YouTube Channel Manager" },
+        { job: "The CEO's Former Nemesis" },
+        { job: "The IT Security Analyst" },
+        { job: "The Party Organizer" },
+        { job: "The Reluctant Witness" },
+        { job: "The Marketing Intern" }
+      ],
+      culprits: [2, 0, 4],
+      clues: [
+        "Clue #1: The video was uploaded from a compromised YouTube session — the YouTube Channel Manager's credentials were used without their knowledge.",
+        "Clue #2: The Video Editor's laptop had the raw karaoke footage — from the company party — already trimmed and color-corrected before the upload.",
+        "Clue #3: The Party Organizer had specifically requested the venue's recording system capture 'all performances' — a very convenient ask.",
+        "Clue #4: The CEO's Former Nemesis was seen laughing at their phone in a bathroom stall as the views climbed past 10,000."
+      ],
+      story: "The CEO's Former Nemesis orchestrated the plan, the Video Editor handled the post-production (they'd been waiting for an opportunity), and the Party Organizer ensured the footage was captured. The compromised YouTube credentials were borrowed via a phishing link. A sophisticated three-person operation with a messy laugh-trail."
+    },
+    {
+      crime: "Someone rearranged the entire IKEA showroom's bedroom display to look exactly like a specific employee's actual bedroom — down to the family photos.",
+      roles: [
+        { job: "The IKEA Weekend Worker" },
+        { job: "The Interior Design Student" },
+        { job: "The Overly Observant Coworker" },
+        { job: "The Store Manager's Assistant" },
+        { job: "The Prop Supplier" },
+        { job: "The Photographer" },
+        { job: "The Target Employee" }
+      ],
+      culprits: [2, 1, 5],
+      clues: [
+        "Clue #1: The family photos used in the display were printed from a social media account — the Photographer had downloaded and printed them from their own account three days prior.",
+        "Clue #2: The Interior Design Student had submitted a portfolio project recreating 'a real living space in a retail context' — and the photos matched the display.",
+        "Clue #3: The Overly Observant Coworker had catalogued the target's desk items, posters, and bedroom colors in a notebook — found under their desk.",
+        "Clue #4: Timing of the rearrangement matches the overnight stock shift — when all three culprits had building access."
+      ],
+      story: "The Overly Observant Coworker was the intelligence arm. The Interior Design Student designed the layout as a 'portfolio piece.' The Photographer supplied real printed photos for authenticity. They worked the overnight shift together to set it up. The target was flattered and terrified."
+    },
+    {
+      crime: "The university's entire computer lab printed the same 4-page meme compilation at 3 AM — consuming all available paper and ink.",
+      roles: [
+        { job: "The Computer Lab Assistant" },
+        { job: "The Night Owl CS Student" },
+        { job: "The Bored IT Help Desk" },
+        { job: "The Print Queue Wizard" },
+        { job: "The Campus Radio DJ" },
+        { job: "The Perpetually Sleepy TA" },
+        { job: "The Student Council Rep" }
+      ],
+      culprits: [1, 2, 3],
+      clues: [
+        "Clue #1: The print job was submitted from the lab terminal at 2:58 AM — an automated script was used to repeat the job across all 47 printers.",
+        "Clue #2: The script was written in a style matching the Print Queue Wizard's known coding conventions — identified by the IT department.",
+        "Clue #3: The meme compilation included an inside joke that only the Night Owl CS Student and Bored IT Help Desk would understand.",
+        "Clue #4: All three were seen in the computer lab at 2:45 AM on security footage — 13 minutes before the jobs started printing."
+      ],
+      story: "The Night Owl CS Student had the idea at 2 AM. The Print Queue Wizard had the technical skills to automate it. The Bored IT Help Desk provided the network access credentials. They selected the meme compilation together, ran the script, and watched all 47 printers go. A masterpiece of collaborative chaos."
+    },
+    {
+      crime: "The local gym's playlist was secretly replaced with 8 hours of smooth jazz — causing a mass confusion during the Monday morning spin class.",
+      roles: [
+        { job: "The Spin Class Regular" },
+        { job: "The Gym Reception Desk" },
+        { job: "The Jazz Enthusiast Member" },
+        { job: "The Gym's Audio Technician" },
+        { job: "The Personal Trainer" },
+        { job: "The Weekend Membership Coordinator" },
+        { job: "The Early Bird Regular" }
+      ],
+      culprits: [2, 3, 5],
+      clues: [
+        "Clue #1: The audio system was accessed via a staff-only app — login records show three staff accounts active during the overnight change.",
+        "Clue #2: The playlist was titled 'Morning Elevation Experience' — a phrase the Jazz Enthusiast had been using to describe their playlist recommendations.",
+        "Clue #3: The Audio Technician had recently complained that 'the current playlist is an insult to music' in the staff group chat.",
+        "Clue #4: The Weekend Membership Coordinator had access to the staff app and had been seen showing the Jazz Enthusiast how to use it the previous Saturday."
+      ],
+      story: "The Jazz Enthusiast had the vision but not the access. The Weekend Membership Coordinator taught them the staff app 'just to see.' The Audio Technician was an ideological ally who provided their login for the actual upload. Three people, one smooth jazz mission."
+    },
+    {
+      crime: "Someone sent a company-wide email from the head of IT's account announcing that the office would switch to 'paper-only communication' for one week — to 'reduce screen fatigue.'",
+      roles: [
+        { job: "The Wellness Advocate" },
+        { job: "The Anti-Tech Colleague" },
+        { job: "The System Administrator" },
+        { job: "The Head of IT" },
+        { job: "The Office Busybody" },
+        { job: "The Reluctant Tech User" },
+        { job: "The Director of Operations" }
+      ],
+      culprits: [0, 1, 2],
+      clues: [
+        "Clue #1: The Head of IT's email credentials were used — but an IT audit showed the System Administrator had reset the password the previous evening.",
+        "Clue #2: The email's writing style matched the Wellness Advocate — specifically the phrase 'digital detox as productivity catalyst,' which appeared in their recent internal blog post.",
+        "Clue #3: The Anti-Tech Colleague had been circulating a petition for 'screen-free days' — 12 signatures, all from people who were very confused by the email.",
+        "Clue #4: All three had lunch together on the day the email was sent — and were seen laughing about something on a printed piece of paper."
+      ],
+      story: "The Wellness Advocate wrote the email, the Anti-Tech Colleague provided moral support and the petition as cover, and the System Administrator provided the access by resetting the Head of IT's credentials. They even printed the email draft to pass around at lunch. The irony was not lost on anyone."
+    },
+    {
+      crime: "The neighborhood security guard's booth was decorated overnight with hundreds of paper origami cranes — a beautiful but completely unauthorized renovation.",
+      roles: [
+        { job: "The Origami Hobbyist" },
+        { job: "The Night Shift Nurse" },
+        { job: "The Art Student" },
+        { job: "The Enthusiastic Neighbor" },
+        { job: "The Craft Supply Store Owner" },
+        { job: "The Security Guard's Fan Club Member" },
+        { job: "The Building Super" }
+      ],
+      culprits: [0, 2, 5],
+      clues: [
+        "Clue #1: Over 800 cranes were used — the Craft Supply Store Owner confirmed a large paper purchase was made by a familiar customer the week before.",
+        "Clue #2: The crane folding style was identified by an online origami community as belonging to a very specific advanced technique — one the Origami Hobbyist had posted tutorials about.",
+        "Clue #3: The Art Student's sketchbook contained preliminary designs for 'The Crane Booth Installation' dated two weeks prior.",
+        "Clue #4: The Security Guard's Fan Club Member had been overheard saying 'he deserves something beautiful' after the guard helped them find their lost cat."
+      ],
+      story: "The Security Guard's Fan Club Member had the motivation (gratitude for the lost cat). The Art Student had the vision and designed the installation. The Origami Hobbyist provided the technical expertise and folded 600 of the 800 cranes. It was genuinely beautiful. The guard cried. There were still consequences."
+    },
+    {
+      crime: "All the name plates on office doors were swapped so that every person's door now showed their colleague's name — lasting an entire workday undetected.",
+      roles: [
+        { job: "The Operations Analyst" },
+        { job: "The Executive Assistant" },
+        { job: "The Quiet One In Accounting" },
+        { job: "The Facilities Technician" },
+        { job: "The Director of Customer Success" },
+        { job: "The HR Business Partner" },
+        { job: "The Floor Ambassador" }
+      ],
+      culprits: [0, 2, 6],
+      clues: [
+        "Clue #1: The name plates were removed and reattached with a specific type of double-sided tape — the same brand found in the Operations Analyst's desk drawer.",
+        "Clue #2: The Quiet One In Accounting had the floor map marked with every name plate location — found in their notebook during an unrelated audit.",
+        "Clue #3: The Floor Ambassador had keys to all office areas as part of their access duties — and had used their key card at 6 AM, two hours before the workday began.",
+        "Clue #4: All three were seen together in the stairwell at 6:15 AM on building security footage."
+      ],
+      story: "The Floor Ambassador had the access, the Quiet One In Accounting had the map and the logic, and the Operations Analyst had the tape and the nerve. They completed the entire swap in under 40 minutes at 6 AM. Nobody noticed all day. This remains their greatest achievement."
+    },
+    {
+      crime: "Someone filed a noise complaint against the library — claiming it was 'too loud with all the pages turning.'",
+      roles: [
+        { job: "The Habitual Complainer" },
+        { job: "The City Council Liaison" },
+        { job: "The Librarian's Nemesis" },
+        { job: "The Overly Literal Neighbor" },
+        { job: "The Legal Aid Volunteer" },
+        { job: "The Noise Pollution Researcher" },
+        { job: "The Bored Bureaucrat" }
+      ],
+      culprits: [0, 3, 4],
+      clues: [
+        "Clue #1: The complaint form was filed online — from an IP address registered to the Habitual Complainer's home address.",
+        "Clue #2: The noise description on the form used very specific legal language — the kind only someone with legal training would use. The Legal Aid Volunteer had volunteered at the complaints office that same day.",
+        "Clue #3: The Overly Literal Neighbor had been seen standing outside the library with a decibel meter — and had texted the Habitual Complainer photos of the readings.",
+        "Clue #4: A draft of the complaint was found on the Habitual Complainer's printer — with handwritten edits in the Legal Aid Volunteer's handwriting."
+      ],
+      story: "The Habitual Complainer had a long-standing irrational grudge against the library. The Overly Literal Neighbor actually measured the page-turning sounds and found them technically measurable (barely). The Legal Aid Volunteer dressed it up in legitimate-sounding legal language. It was an absurd masterpiece of unnecessary bureaucracy."
+    },
+    {
+      crime: "The school's spring concert pianist mysteriously lost their sheet music the morning of the performance — but someone left 40 identical wrong copies.",
+      roles: [
+        { job: "The Rival Pianist" },
+        { job: "The Sheet Music Printer" },
+        { job: "The Concert Backstage Manager" },
+        { job: "The Music Librarian" },
+        { job: "The Sound Technician" },
+        { job: "The Jealous Music Parent" },
+        { job: "The Rehearsal Accompanist" }
+      ],
+      culprits: [0, 5, 1],
+      clues: [
+        "Clue #1: The 40 wrong copies were professionally printed — the Sheet Music Printer's receipt log showed a late-night print job matching the paper size and quantity.",
+        "Clue #2: The wrong copies contained a piece the Rival Pianist had publicly claimed was 'easier and better' than what was being performed.",
+        "Clue #3: The original sheet music was found locked in the Music Librarian's cabinet — but only the Rival Pianist, Music Librarian, and Jealous Music Parent had requested library access that week.",
+        "Clue #4: The Jealous Music Parent had complained to the Rival Pianist's own parent that 'their child should have gotten the solo spot.'"
+      ],
+      story: "The Jealous Music Parent and Rival Pianist were a natural alliance. The Sheet Music Printer was recruited (with the promise of a large order next time) to produce the decoy copies. The original was hidden in the library after access was granted under a false pretense. A thorough if over-engineered sabotage."
+    }
+  ],
+  8: [
+    {
+      crime: "The company's award-winning office succulent garden was found rearranged into the shape of a very rude hand gesture — visible from the street.",
+      roles: [
+        { job: "The Office Plant Manager" },
+        { job: "The Grievance Committee Chair" },
+        { job: "The Disgruntled Former Intern" },
+        { job: "The Architectural Botanist" },
+        { job: "The Window Cleaning Contractor" },
+        { job: "The After-Hours Security" },
+        { job: "The Art Director" },
+        { job: "The Company Photographer" }
+      ],
+      culprits: [2, 3, 6],
+      clues: [
+        "Clue #1: The rearrangement required knowledge of which plants could be moved without damage — the Architectural Botanist had written an internal guide on exactly this.",
+        "Clue #2: The Art Director had sketched a 'succulent installation' concept in their portfolio — strikingly similar in shape to what appeared.",
+        "Clue #3: The Disgruntled Former Intern had publicly posted 'one day they'll know how I feel' on social media after their internship ended badly.",
+        "Clue #4: After-hours security footage showed three figures working in coordinated silence — one consulting something on a phone."
+      ],
+      story: "The Disgruntled Former Intern had the motive. The Art Director had the vision and sketched the layout. The Architectural Botanist provided the technical knowledge to avoid plant damage (ironically professional). Security footage caught the silhouettes. The phone consultation was the Art Director checking the sketch."
+    },
+    {
+      crime: "The building's emergency announcement system was used at 3 PM on a Tuesday to play an original 4-minute song about the importance of taking lunch breaks.",
+      roles: [
+        { job: "The Wellness Manager" },
+        { job: "The Security System Engineer" },
+        { job: "The Songwriter On The Side" },
+        { job: "The Union Representative" },
+        { job: "The Floor Supervisor" },
+        { job: "The Cafeteria Manager" },
+        { job: "The IT Accessibility Lead" },
+        { job: "The Chronic Overworker" }
+      ],
+      culprits: [0, 2, 3],
+      clues: [
+        "Clue #1: The emergency system was accessed with a legitimate admin override code — one only the Wellness Manager and IT team had access to.",
+        "Clue #2: The original song was traced to a SoundCloud account belonging to the Songwriter On The Side — uploaded two days before the incident.",
+        "Clue #3: The Union Representative had recently filed a formal complaint about 'systematic lunch break suppression' — citing the same statistics mentioned in the song's lyrics.",
+        "Clue #4: All three were seen in the Wellness Manager's office for an 'informal meeting' the morning of the announcement."
+      ],
+      story: "The Union Representative provided the cause and the stats. The Songwriter On The Side wrote and produced the song (genuinely catchy, people admitted). The Wellness Manager provided the emergency system override code. The song was heard by 400 employees. Lunch break compliance improved by 34%."
+    },
+    {
+      crime: "All the fish in the university's decorative lobby fountain were replaced overnight with rubber ducks — each wearing tiny graduation caps.",
+      roles: [
+        { job: "The Biology Lab Technician" },
+        { job: "The Art Supply Student" },
+        { job: "The Facilities Access Key Holder" },
+        { job: "The Aquarium Club President" },
+        { job: "The Campus Craft Fair Organizer" },
+        { job: "The Night Security Volunteer" },
+        { job: "The Engineering Student" },
+        { job: "The Drama Society Prop Master" }
+      ],
+      culprits: [1, 2, 7],
+      clues: [
+        "Clue #1: The graduation caps were handmade — and the materials matched a specific craft kit sold only at the Campus Craft Fair, organized by someone familiar.",
+        "Clue #2: The Facilities key was used at 11:47 PM — the Key Holder's card was swiped but they claimed to have been in their room.",
+        "Clue #3: The Drama Society Prop Master had a bulk order of rubber ducks in their prop room — for a show that had been cancelled.",
+        "Clue #4: The Art Supply Student had posted 'current project: classified ' on their story three days before the incident."
+      ],
+      story: "The Drama Society Prop Master had the rubber ducks (cancelled show surplus). The Art Supply Student made the graduation caps and very unwisely posted about it. The Facilities Key Holder provided overnight access. The fish were safely moved to the Biology Lab for the night and returned the next day."
+    },
+    {
+      crime: "Someone submitted a 40-page formal proposal to city hall to rename a local street 'Absolutely No Parking Lane' — and it nearly got approved.",
+      roles: [
+        { job: "The Perpetually Ticketed Driver" },
+        { job: "The Urban Planning Enthusiast" },
+        { job: "The City Council Intern" },
+        { job: "The Legal Proofreader" },
+        { job: "The Neighborhood Association Rep" },
+        { job: "The Former City Planner" },
+        { job: "The Petition Signature Collector" },
+        { job: "The Notary Public" }
+      ],
+      culprits: [0, 1, 2],
+      clues: [
+        "Clue #1: The proposal was professionally formatted and referenced real zoning regulations — the Urban Planning Enthusiast's unique formatting style was identified by a colleague.",
+        "Clue #2: The City Council Intern had been seen adding the proposal to the review queue themselves — bypassing the standard submission check.",
+        "Clue #3: The Perpetually Ticketed Driver had 14 parking tickets on that specific street — and had vented about it to everyone in the building.",
+        "Clue #4: The proposal included personal testimony from 'an anonymous resident' — whose writing style exactly matched the Perpetually Ticketed Driver's complaint emails to the city."
+      ],
+      story: "The Perpetually Ticketed Driver had the grievance. The Urban Planning Enthusiast had the technical knowledge to make it look legitimate (and found it a fun challenge). The City Council Intern had the internal access to expedite the review. The anonymous testimony was a direct copy-paste from previous complaint emails."
+    },
+    {
+      crime: "The company holiday party DJ's entire playlist was replaced with educational podcasts about tax optimization — and nobody noticed for 45 minutes.",
+      roles: [
+        { job: "The Finance Director" },
+        { job: "The Event AV Technician" },
+        { job: "The Tax Consultant Guest" },
+        { job: "The Party Planner" },
+        { job: "The Overly Enthusiastic New Accountant" },
+        { job: "The DJ's Assistant" },
+        { job: "The CEO's Plus-One" },
+        { job: "The Security Guard Assigned To The Party" }
+      ],
+      culprits: [0, 4, 2],
+      clues: [
+        "Clue #1: The playlist switch was made via a Bluetooth connection — someone paired a device to the audio system without authorization.",
+        "Clue #2: The specific podcast series used was 'Taxes Unfiltered' — a show only the Tax Consultant and the Overly Enthusiastic New Accountant were known to listen to.",
+        "Clue #3: The Finance Director had been overheard telling the Tax Consultant that 'nobody at this party understands the value of good financial literacy.'",
+        "Clue #4: All three suspects were seen nodding enthusiastically during the podcast section — while everyone else looked confused."
+      ],
+      story: "The Finance Director had the conviction. The Tax Consultant had the podcast loaded. The Overly Enthusiastic New Accountant made the Bluetooth connection while pretending to 'fix the speaker cable.' They genuinely believed it was an upgrade. The nodding gave them away immediately — once anyone looked."
+    },
+    {
+      crime: "All 300 chairs in the lecture hall were arranged into a giant QR code — which, when scanned, led to a 10-hour study playlist on YouTube.",
+      roles: [
+        { job: "The Data Visualization Nerd" },
+        { job: "The Student Union Organizer" },
+        { job: "The QR Code Enthusiast" },
+        { job: "The Lecture Hall Building Manager" },
+        { job: "The Sleep-Deprived Study Group" },
+        { job: "The Engineering Society President" },
+        { job: "The Procrastinator With Sudden Energy" },
+        { job: "The Maths Department TA" }
+      ],
+      culprits: [0, 2, 6],
+      clues: [
+        "Clue #1: The chair arrangement was mathematically precise — matching a QR code pattern that required software to generate. The Data Visualization Nerd's GitHub had a 'chair-QR generator' project committed the night before.",
+        "Clue #2: The QR Code Enthusiast had posted 'can't sleep, working on something' at 2 AM — the same night as the rearrangement.",
+        "Clue #3: The Procrastinator With Sudden Energy had hall access through the Building Manager (their parent) and had used it that night.",
+        "Clue #4: The study playlist linked in the QR code was a playlist on the Procrastinator's YouTube account — created two days earlier during what they described as 'a productive panic.'"
+      ],
+      story: "The Procrastinator had the access, the playlist, and the deadline panic. The Data Visualization Nerd generated the QR code layout in software. The QR Code Enthusiast supervised the arrangement for accuracy at 2 AM. The GitHub commit and YouTube account were definitive. It was an elaborate act of academic procrastination."
+    },
+    {
+      crime: "The company's brand new, very expensive espresso machine was found set to dispense exactly 1ml of coffee at a time — requiring 30 pulls for a single cup.",
+      roles: [
+        { job: "The Precision Coffee Aficionado" },
+        { job: "The IT Technician Who Fixes Everything" },
+        { job: "The Anti-Coffee Movement Colleague" },
+        { job: "The Office Manager Who Approved The Purchase" },
+        { job: "The Barista-Trained Volunteer" },
+        { job: "The Quality Control Analyst" },
+        { job: "The Research And Development Tester" },
+        { job: "The Person Who Reads The Manual" }
+      ],
+      culprits: [0, 2, 7],
+      clues: [
+        "Clue #1: The machine's settings were accessed through a hidden calibration menu — only accessible if you've read the full manual.",
+        "Clue #2: The Anti-Coffee Movement Colleague had been advocating for the machine's removal, calling it 'a monument to caffeine addiction.'",
+        "Clue #3: The Precision Coffee Aficionado had argued that 1ml pulls were 'technically the most accurate espresso extraction method' in a lengthy email thread.",
+        "Clue #4: The Person Who Reads The Manual had highlighted the calibration menu section in their printed copy — found in the break room."
+      ],
+      story: "The Precision Coffee Aficionado believed this was genuinely an improvement. The Person Who Reads The Manual found the calibration settings and shared the knowledge. The Anti-Coffee Movement Colleague implemented the change hoping it would make the machine too tedious to use. All three had completely different but converging motivations."
+    },
+    {
+      crime: "A 12-foot banner reading 'HONK IF YOU THINK MEETINGS COULD BE EMAILS' was hung across the building's main entrance — and was there for 6 hours.",
+      roles: [
+        { job: "The Meeting Hater" },
+        { job: "The Building Access Coordinator" },
+        { job: "The Banner Print Shop Owner" },
+        { job: "The Remote Work Advocate" },
+        { job: "The Senior Engineer" },
+        { job: "The Communications Lead" },
+        { job: "The Office Dog Owner" },
+        { job: "The Statistics Collector" }
+      ],
+      culprits: [0, 3, 4],
+      clues: [
+        "Clue #1: The banner was printed at a local shop — the receipt was traced to an account registered to the Meeting Hater.",
+        "Clue #2: The Remote Work Advocate had been circulating an internal survey with the exact phrase 'meetings that could be emails' for two months.",
+        "Clue #3: The Senior Engineer had building access for an early morning maintenance check and had arrived unusually early that day.",
+        "Clue #4: All three had been in the same recurring meeting that the previous week generated a 94-message Slack thread about whether it was necessary."
+      ],
+      story: "The Meeting Hater funded the banner. The Remote Work Advocate provided the phrase (their survey slogan). The Senior Engineer used their early morning access to hang it. The 94-message Slack thread was their shared breaking point. The banner generated 112 honks before facilities arrived."
+    }
+  ],
+  9: [
+    {
+      crime: "The entire company intranet homepage was replaced overnight with a single page that just said 'Go home, you've been working too much' in 14 different languages.",
+      roles: [
+        { job: "The Frontend Developer" },
+        { job: "The Wellness Committee Chair" },
+        { job: "The Multilingual Translator" },
+        { job: "The IT Infrastructure Admin" },
+        { job: "The Burnout Recovery Coach" },
+        { job: "The People Analytics Manager" },
+        { job: "The Night Shift Server Technician" },
+        { job: "The Anonymous Suggestion Box Champion" },
+        { job: "The HR Director" }
+      ],
+      culprits: [0, 1, 2],
+      clues: [
+        "Clue #1: The intranet was modified via a CMS with restricted access — the Frontend Developer's credentials were used for the deployment.",
+        "Clue #2: The message was translated into 14 languages with perfect idiomatic accuracy — not machine translation. The Multilingual Translator had posted about doing 'a secret passion project' the same week.",
+        "Clue #3: The Wellness Committee Chair had submitted a report showing average employee overtime was 23 hours per week — the same week as the incident.",
+        "Clue #4: All three had been in the same 'too many meetings' Slack channel that week, and the Frontend Developer had pinned the message 'someone should just say it.'"
+      ],
+      story: "The Frontend Developer said it with code. The Wellness Committee Chair provided the data-backed motivation and moral authority. The Multilingual Translator brought the genuine linguistic care to make it feel human in every language. The Slack pin was a confession hiding in plain sight."
+    },
+    {
+      crime: "The school's entire art wing was covertly redecorated with extremely accurate but completely fictional paintings labeled as 'lost masterpieces.'",
+      roles: [
+        { job: "The Art Teacher" },
+        { job: "The History Teacher Who Loves Forgeries" },
+        { job: "The Talented Art Student" },
+        { job: "The Museum Volunteer" },
+        { job: "The School Principal's Assistant" },
+        { job: "The Drama Club Set Designer" },
+        { job: "The Framing Hobby Enthusiast" },
+        { job: "The Printing Lab Technician" },
+        { job: "The Art Supply Donator" }
+      ],
+      culprits: [1, 2, 5],
+      clues: [
+        "Clue #1: The paintings were made with high-quality art supplies — a donation receipt showed a large canvas-and-oil-paint order linked to the Art Supply Donator — but addressed to the Art Teacher's classroom.",
+        "Clue #2: The fictional labels were professionally typeset — matching the Drama Club Set Designer's typography work seen in previous productions.",
+        "Clue #3: The History Teacher had given a lecture on art forgery that week and had shared an 'assignment rubric' with the Talented Art Student that included 'period-accurate texture techniques.'",
+        "Clue #4: All three were seen in the art wing after school hours for three consecutive days the week before the reveal."
+      ],
+      story: "The History Teacher curated the fictional art history with scholarly detail. The Talented Art Student executed the paintings with skill that stunned the school. The Drama Club Set Designer designed the labels and framing. It was arguably the best art the wing had ever seen. The principal agreed. There were still consequences."
+    },
+    {
+      crime: "A city pigeon was somehow trained to deliver small anonymous motivational notes to specific office workers — for two weeks before anyone figured out how.",
+      roles: [
+        { job: "The Animal Behavior Researcher" },
+        { job: "The Rooftop Garden Enthusiast" },
+        { job: "The Note-Writing Optimist" },
+        { job: "The Building Facilities Manager" },
+        { job: "The Wildlife Volunteer" },
+        { job: "The Bird Watching Society President" },
+        { job: "The Office Morale Lead" },
+        { job: "The Person Who Finally Figured It Out" },
+        { job: "The Pigeon's Registered Owner" }
+      ],
+      culprits: [0, 2, 8],
+      clues: [
+        "Clue #1: The pigeon was traced to a registered owner — their address was two blocks from the office.",
+        "Clue #2: The notes were handwritten in a very distinctive optimistic style — matching cards the Note-Writing Optimist had distributed at the previous office birthday party.",
+        "Clue #3: The Animal Behavior Researcher had a published paper on 'targeted reward-based urban pigeon navigation' — the exact technique used.",
+        "Clue #4: All three were seen on the rooftop together on several mornings — described as 'feeding pigeons' by witnesses."
+      ],
+      story: "The Pigeon's Registered Owner had a trained pigeon and a great idea. The Animal Behavior Researcher provided the scientific training protocol. The Note-Writing Optimist wrote all 34 notes with genuine warmth. The rooftop rendezvous was the handoff point. The morale improvement was real. The method was insane."
+    },
+    {
+      crime: "The office's annual performance review forms were all replaced with a survey that asked only one question: 'Are you happy here? (Please answer honestly.)'",
+      roles: [
+        { job: "The HR System Administrator" },
+        { job: "The Chief Happiness Officer" },
+        { job: "The Disilllusioned Senior Employee" },
+        { job: "The Employee Experience Designer" },
+        { job: "The Anonymous Feedback Platform Developer" },
+        { job: "The Outgoing Team Lead" },
+        { job: "The Change Management Consultant" },
+        { job: "The Survey Research Expert" },
+        { job: "The Compliance Officer" }
+      ],
+      culprits: [1, 3, 4],
+      clues: [
+        "Clue #1: The performance review system was modified via an admin access account — traced to the HR System Admin's credentials, but used from a device registered to the Employee Experience Designer.",
+        "Clue #2: The one-question format had been proposed in a presentation by the Chief Happiness Officer six months earlier — the proposal was rejected.",
+        "Clue #3: The Anonymous Feedback Platform Developer had the technical skills to implement the form change and had complained in a team channel about 'performance reviews that measure nothing real.'",
+        "Clue #4: All three were in a group chat called 'The Radical Honesty Initiative' — found during a routine audit."
+      ],
+      story: "The Chief Happiness Officer had the vision (rejected proposal). The Employee Experience Designer had the borrowed credentials. The Anonymous Feedback Platform Developer implemented the technical change. The group chat name was their greatest vulnerability. 73% of employees answered 'No' to the single question."
+    },
+    {
+      crime: "The company's product demo video on the website was replaced with a version where all the product names had been changed to pasta types.",
+      roles: [
+        { job: "The Video Editor" },
+        { job: "The Web Developer" },
+        { job: "The Pasta Enthusiast In Marketing" },
+        { job: "The QA Engineer" },
+        { job: "The Product Manager" },
+        { job: "The Brand Standards Keeper" },
+        { job: "The Voiceover Artist" },
+        { job: "The CDN Administrator" },
+        { job: "The Proofreader Who Missed This" }
+      ],
+      culprits: [0, 2, 7],
+      clues: [
+        "Clue #1: The replacement video was uploaded to the CDN — from a set of credentials belonging to the CDN Administrator.",
+        "Clue #2: The pasta naming was consistent and creative — the Pasta Enthusiast had previously created an internal meme deck with all the product names replaced by pasta, calling it 'more memorable.'",
+        "Clue #3: The Video Editor's workstation had both the original and the pasta-version files in the same project folder — found during a forensic review.",
+        "Clue #4: The replacement video had perfect audio sync — indicating a professional editor had re-voiced the pasta names rather than just overlaying text."
+      ],
+      story: "The Pasta Enthusiast had the concept (and the meme deck). The Video Editor had the skills and agreed it was, objectively, funnier. The CDN Administrator provided upload access after being convinced this was a 'staging test.' The audio sync quality was the Video Editor's professional undoing."
+    },
+    {
+      crime: "All the exit signs in the company building were replaced overnight with signs reading 'Why Leave? You're Already Here.'",
+      roles: [
+        { job: "The Facilities Access Lead" },
+        { job: "The Copywriter With Dark Humor" },
+        { job: "The Sign Fabricator" },
+        { job: "The Late-Night Custodian" },
+        { job: "The Philosopher In Engineering" },
+        { job: "The Retention Marketing Specialist" },
+        { job: "The Design Intern" },
+        { job: "The Compliance-Resistant Creative Director" },
+        { job: "The Person Who Was Just Helping" }
+      ],
+      culprits: [1, 2, 7],
+      clues: [
+        "Clue #1: The signs were professionally fabricated — with illuminated lettering matching standard exit sign dimensions. The Sign Fabricator's receipt log showed a custom order that week.",
+        "Clue #2: The copy was unmistakably in the Copywriter's voice — three colleagues independently identified it as their style before any investigation.",
+        "Clue #3: The Compliance-Resistant Creative Director had the concept in their portfolio sketchbook — under 'installation art / corporate commentary.'",
+        "Clue #4: All three were photographed at what appeared to be a 'project completion dinner' three days before the signs appeared."
+      ],
+      story: "The Compliance-Resistant Creative Director had the concept as an art installation idea. The Copywriter wrote the text (guilty with zero remorse). The Sign Fabricator made the signs professionally, believing it was a legitimate client order. The dinner photo was their public celebration. Fire safety regulations were not amused."
+    },
+    {
+      crime: "Someone installed a fully functioning street food cart in the company lobby overnight — serving actual food when people arrived in the morning.",
+      roles: [
+        { job: "The Food Entrepreneur On Leave" },
+        { job: "The After-Hours Security" },
+        { job: "The Logistics Wizard" },
+        { job: "The Chef Who Quit Last Month" },
+        { job: "The Marketing Hype Person" },
+        { job: "The Facilities Floor Key Holder" },
+        { job: "The Operations Efficiency Nerd" },
+        { job: "The Catering Manager" },
+        { job: "The Person Who Thought This Was Authorized" }
+      ],
+      culprits: [0, 3, 4],
+      clues: [
+        "Clue #1: The cart was transported overnight — a delivery record showed it came from a storage unit registered to the Food Entrepreneur.",
+        "Clue #2: The food being served was a signature recipe the Chef Who Quit Last Month was famous for within the company.",
+        "Clue #3: The Marketing Hype Person had sent internal emails teasing 'a lobby experience you won't believe' — which HR thought was about a furniture delivery.",
+        "Clue #4: All three were present and in aprons when the first employees arrived at 7:45 AM."
+      ],
+      story: "The Food Entrepreneur had the cart, the vision, and a business idea they wanted to test. The Chef Who Quit Last Month had the recipes and frankly missed the people. The Marketing Hype Person built internal buzz deliberately misdirected. The aprons at 7:45 AM were a signed confession."
+    },
+    {
+      crime: "Every single motivational quote on the company's motivational calendar was replaced with the exact same quote: 'That's a problem for Future You.'",
+      roles: [
+        { job: "The Calendar Printing Vendor" },
+        { job: "The Procurement Manager" },
+        { job: "The Pessimistic But Lovable Colleague" },
+        { job: "The Design Team Lead" },
+        { job: "The Office Supply Coordinator" },
+        { job: "The Content Strategist" },
+        { job: "The Person Who Orders Office Things" },
+        { job: "The Unofficial Office Philosopher" },
+        { job: "The Intern Who Does Admin" }
+      ],
+      culprits: [2, 3, 5],
+      clues: [
+        "Clue #1: The calendar replacement was placed into the procurement order — the Procurement Manager's records show an amendment that matches the modified calendar specification.",
+        "Clue #2: The phrase 'That's a problem for Future You' had been the Pessimistic But Lovable Colleague's consistent Slack status message for three months.",
+        "Clue #3: The Design Team Lead had mocked up the calendar in the company's design system — found in a shared folder under 'Experimental Projects.'",
+        "Clue #4: The Content Strategist's notes included 'calendar project — quote selection final: unanimous' with three initials that matched the suspects."
+      ],
+      story: "The Pessimistic But Lovable Colleague supplied the phrase (and the philosophy). The Design Team Lead made it look professional and consistent. The Content Strategist coordinated the project and left a notes trail that was basically a signed confession. 200 employees received the calendar. Many kept it."
+    }
+  ],
+  10: [
+    {
+      crime: "The city's largest aquarium had all its fish exhibits temporarily renamed after famous economists — with new informational placards to match.",
+      roles: [
+        { job: "The Economics Professor" },
+        { job: "The Museum Exhibit Designer" },
+        { job: "The Aquarium Night Staff" },
+        { job: "The Placard Printing Expert" },
+        { job: "The Marine Biology Student" },
+        { job: "The Volunteer Coordinator" },
+        { job: "The Satirical Artist" },
+        { job: "The Aquarium Management Intern" },
+        { job: "The Academic Blogger" },
+        { job: "The Facilities Access Manager" }
+      ],
+      culprits: [0, 1, 6, 7],
+      clues: [
+        "Clue #1: The placards were printed with precise aquarium-standard formatting — the Placard Printing Expert's shop completed a custom aquarium-sized order that week.",
+        "Clue #2: The Economics Professor had published a blog post titled 'Fish Markets and Free Markets: A Visual Guide' three days before the incident.",
+        "Clue #3: The Satirical Artist had posted 'working on something that will confuse exactly the right people' on their art account two weeks prior.",
+        "Clue #4: The Aquarium Management Intern had been given after-hours access for a 'special project review' — and had used it at 11 PM.",
+        "Clue #5: The Exhibit Designer's portfolio included 'unauthorized public installation work' as a category — with a note 'details on request.'"
+      ],
+      story: "The Economics Professor had the concept (a published idea about economic metaphors in nature). The Satirical Artist designed the visual language. The Exhibit Designer made it look entirely real. The Aquarium Management Intern provided after-hours access. The blog post and portfolio were public evidence they were too proud to hide."
+    },
+    {
+      crime: "The company's entire customer email list received a newsletter that was entirely haiku poetry — all describing the experience of waiting on hold.",
+      roles: [
+        { job: "The Email Marketing Lead" },
+        { job: "The Customer Experience Head" },
+        { job: "The Haiku-Obsessed Developer" },
+        { job: "The CRM System Admin" },
+        { job: "The Brand Voice Writer" },
+        { job: "The Customer Support Director" },
+        { job: "The Automation Engineer" },
+        { job: "The Quality Assurance Lead" },
+        { job: "The Marketing Ops Manager" },
+        { job: "The Poet On Sabbatical" }
+      ],
+      culprits: [2, 3, 6, 9],
+      clues: [
+        "Clue #1: The email was deployed from the CRM system — the System Admin's credentials were used for the send.",
+        "Clue #2: The haikus were technically perfect and thematically devastating — a poetry review site later called them 'the best unsolicited corporate haiku ever published.'",
+        "Clue #3: The Automation Engineer had built a CRM workflow two weeks prior labeled 'hold music poetics' in the test environment.",
+        "Clue #4: The Poet On Sabbatical had guest-written the company's internal newsletter before — their style was unmistakably identified by three colleagues.",
+        "Clue #5: All four suspects were in an email thread titled 'The Newsletter Project' — found in the Haiku-Obsessed Developer's archived folder."
+      ],
+      story: "The Haiku-Obsessed Developer had the concept and the CRM knowledge. The System Admin provided the credentials (a favor they immediately regretted). The Automation Engineer built the delivery pipeline. The Poet On Sabbatical wrote the 12 haikus. The email thread was titled with stunning indiscretion. The newsletter had a 68% open rate."
+    },
+    {
+      crime: "All the GPS navigators in the company fleet were secretly reprogrammed to give directions exclusively using famous movie quotes.",
+      roles: [
+        { job: "The Fleet Manager" },
+        { job: "The GPS Firmware Developer" },
+        { job: "The Movie Trivia Champion" },
+        { job: "The Logistics Software Engineer" },
+        { job: "The Vehicle Maintenance Tech" },
+        { job: "The IT Security Auditor" },
+        { job: "The Voice Acting Hobbyist" },
+        { job: "The Operations Data Analyst" },
+        { job: "The Driver Who Complained First" },
+        { job: "The Company Archivist" }
+      ],
+      culprits: [1, 2, 3, 6],
+      clues: [
+        "Clue #1: The GPS firmware was updated remotely — from a developer terminal registered to the GPS Firmware Developer.",
+        "Clue #2: The movie quotes were delivered in four different recorded voices — all traced to microphone sessions in the Voice Acting Hobbyist's home setup.",
+        "Clue #3: The quote selection was extremely specific and consistent — matching a list the Movie Trivia Champion had published on an online film forum.",
+        "Clue #4: The Logistics Software Engineer had accessed the fleet management portal at 1 AM on the night of the update.",
+        "Clue #5: All four had attended the same movie marathon event — and had been overheard debating 'what if navigation systems spoke like this' over pizza."
+      ],
+      story: "The GPS Firmware Developer had the technical access. The Logistics Software Engineer handled the fleet portal entry. The Movie Trivia Champion curated the quote library. The Voice Acting Hobbyist recorded all four navigation voices. The pizza conversation was overheard by three people. The GPS was genuinely more entertaining than before."
+    },
+    {
+      crime: "The company's annual report — 80 pages — was accidentally (?) printed and distributed with the entire financial section written in the style of a fairy tale.",
+      roles: [
+        { job: "The CFO's Personal Editor" },
+        { job: "The Creative Writing Grad Turned Analyst" },
+        { job: "The Print Production Manager" },
+        { job: "The Proofreading Contractor" },
+        { job: "The Investor Relations Manager" },
+        { job: "The Report Layout Designer" },
+        { job: "The Data Entry Coordinator" },
+        { job: "The Financial Narrative Writer" },
+        { job: "The Document Control Officer" },
+        { job: "The Assistant Who Pressed Print" }
+      ],
+      culprits: [1, 5, 7, 9],
+      clues: [
+        "Clue #1: The fairy tale rewrite was done in a document tracked under the Creative Writing Grad's author signature — they'd forgotten to change the metadata.",
+        "Clue #2: The Report Layout Designer had applied full fairy tale formatting — illuminated letter capitals, parchment-texture section breaks — that matched their personal portfolio.",
+        "Clue #3: The Financial Narrative Writer had been publicly complaining that 'nobody reads the financial section' for two quarters running.",
+        "Clue #4: The print was submitted by the Assistant Who Pressed Print — who confirmed they were told it was 'the final approved version' by someone whose name they couldn't remember.",
+        "Clue #5: All four had been in a private document sharing folder titled 'The Annual Report We Deserve' — containing drafts dating back six months."
+      ],
+      story: "The Financial Narrative Writer had the ideological motivation. The Creative Writing Grad wrote the fairy tale financial section and left their metadata in. The Report Layout Designer made it beautiful and unmistakably intentional. The Assistant pressed print in good faith and became an unwitting participant. The folder title was breathtaking hubris."
+    },
+    {
+      crime: "The company's building lobby was transformed overnight into a fully functioning escape room — employees had to solve puzzles to get to the elevator.",
+      roles: [
+        { job: "The Escape Room Designer" },
+        { job: "The Facilities Overnight Access Lead" },
+        { job: "The Puzzle Enthusiast Manager" },
+        { job: "The Prop Builder" },
+        { job: "The Interior Decorator With Too Much Energy" },
+        { job: "The Electrical Work Hobbyist" },
+        { job: "The Game Master Volunteer" },
+        { job: "The Documentation Creator" },
+        { job: "The Equipment Rental Contact" },
+        { job: "The Person Who Thought It Was Approved" }
+      ],
+      culprits: [0, 2, 4, 5],
+      clues: [
+        "Clue #1: The escape room design was professionally documented — the Escape Room Designer's unique notation style was identified by their professional colleagues.",
+        "Clue #2: The puzzle mechanics were the Puzzle Enthusiast Manager's known specialty — they'd given internal talks on 'puzzle logic in workplace engagement.'",
+        "Clue #3: The Interior Decorator had sourced all the props — rental records linked to their account at the Equipment Rental company.",
+        "Clue #4: The electrical puzzle components had custom wiring that matched work samples from the Electrical Work Hobbyist's online portfolio.",
+        "Clue #5: All four had blocked out the same overnight window in their calendars as 'Personal Project' two weeks before the incident."
+      ],
+      story: "The Escape Room Designer had always wanted to build a real one. The Puzzle Enthusiast Manager designed the logic. The Interior Decorator sourced props and handled aesthetics. The Electrical Work Hobbyist built the electrical puzzles. The calendar blocks were synchronized. 64% of arriving employees successfully solved the lobby within 8 minutes. 36% were late to their meetings."
+    },
+    {
+      crime: "The school's end-of-year slideshow was replaced at the last second with a documentary about the school's most chaotic moments — narrated by a surprisingly accurate impression of the principal.",
+      roles: [
+        { job: "The AV Club President" },
+        { job: "The Video Production Student" },
+        { job: "The Impression Artist" },
+        { job: "The Slideshow Tech Volunteer" },
+        { job: "The Event Coordinator" },
+        { job: "The Script Writer" },
+        { job: "The Archive Footage Curator" },
+        { job: "The Editing Suite Key Holder" },
+        { job: "The Live Sound Board Operator" },
+        { job: "The Student Who Everyone Trusted" }
+      ],
+      culprits: [0, 1, 2, 5],
+      clues: [
+        "Clue #1: The documentary file was found on the AV Club's server under a folder labeled 'Definitely Just Backup Files' — which was not subtle.",
+        "Clue #2: The voiceover narration was done in an impression of the principal — traced to a voice recording session in the Impression Artist's bedroom (confirmed by background noise matching their known microphone setup).",
+        "Clue #3: The Script Writer's notebook had 8 pages of 'documentary narration drafts' with the AV Club President's handwritten notes in the margins.",
+        "Clue #4: The Video Production Student's hard drive had the full edit history of the documentary — compiled over three months.",
+        "Clue #5: The Student Who Everyone Trusted had been given access to the presentation system 'to help with the official slideshow' — and had made one final substitution."
+      ],
+      story: "The AV Club President had the vision and the server. The Video Production Student spent three months editing. The Script Writer wrote the narration. The Impression Artist provided the voice. The Student Who Everyone Trusted made the last-second swap. The folder name was a crime against operational security. The principal laughed. Eventually."
+    },
+    {
+      crime: "The company's rooftop was converted overnight into a fully equipped miniature golf course — with all 9 holes themed around company products.",
+      roles: [
+        { job: "The Product Marketing Manager" },
+        { job: "The Golf Hobbyist Colleague" },
+        { job: "The Carpentry Enthusiast" },
+        { job: "The Rooftop Access Key Holder" },
+        { job: "The Materials Procurement Volunteer" },
+        { job: "The Brand Design Specialist" },
+        { job: "The Engineering Tinkerer" },
+        { job: "The Event Concepts Creator" },
+        { job: "The Weekend Worker With Access" },
+        { job: "The Person Who Just Wanted To Help" }
+      ],
+      culprits: [1, 2, 5, 6],
+      clues: [
+        "Clue #1: The golf course holes were product-themed with high brand accuracy — the Brand Design Specialist's precise visual style was immediately identified by the design team.",
+        "Clue #2: The carpentry work was clean and structurally sound — matching work samples the Carpentry Enthusiast had shared in the company crafts Slack channel.",
+        "Clue #3: The Golf Hobbyist had ordered 9 sets of miniature golf putters online — the delivery was confirmed to their home address.",
+        "Clue #4: The Engineering Tinkerer had designed mechanical elements in one of the holes — a spinning product logo obstacle — matching their known design style.",
+        "Clue #5: All four had signed into the building on the same Saturday — under different stated reasons."
+      ],
+      story: "The Golf Hobbyist had the equipment and the enthusiasm. The Carpentry Enthusiast built the course structures. The Brand Design Specialist designed every hole's theme. The Engineering Tinkerer added the mechanical elements. They each signed in separately with different excuses. Nobody checked the roof until Monday morning. The course was genuinely well-designed."
+    },
+    {
+      crime: "A fully staffed, surprisingly good pop-up restaurant appeared in the company's unused conference room for one week — with a menu, reservations, and Yelp reviews.",
+      roles: [
+        { job: "The Aspiring Restaurateur" },
+        { job: "The Sous Chef Friend" },
+        { job: "The Front of House Manager" },
+        { job: "The Conference Room Booking Admin" },
+        { job: "The Menu Designer" },
+        { job: "The Server Who Needed A Side Job" },
+        { job: "The Sommelier Who Was Bored" },
+        { job: "The Digital Marketing Person" },
+        { job: "The Person Who Reviewed It On Yelp Not Knowing It Was Illegal" },
+        { job: "The Food Safety Volunteer" }
+      ],
+      culprits: [0, 1, 2, 7],
+      clues: [
+        "Clue #1: The conference room was booked under 'Team Lunch Planning Sessions' for 5 consecutive days — by the Conference Room Booking Admin's account, which they claim was borrowed.",
+        "Clue #2: The Yelp page for 'The Conference Room (Unnamed)' was created from an IP address registered to the Digital Marketing Person.",
+        "Clue #3: The Aspiring Restaurateur had been heard telling three people 'I'm going to open a restaurant this year, watch me.'",
+        "Clue #4: The Sous Chef had sourced ingredients using a supplier account registered under the catering company they'd worked for previously.",
+        "Clue #5: The Front of House Manager had designed a reservation system — found on a shared Google Sheet titled 'do not share' — with 47 employee reservations already confirmed."
+      ],
+      story: "The Aspiring Restaurateur made good on their promise. The Sous Chef handled all the cooking. The Front of House Manager ran reservations and service. The Digital Marketing Person launched the Yelp page for authenticity. The Google Sheet title was not a real security measure. The food was genuinely excellent. Four employees called it 'the best work lunch they'd ever had.'"
+    },
+    {
+      crime: "The building's entire digital signage system was overtaken and displayed a continuous loop of motivational speeches — delivered by the office plants (via puppets and voice acting).",
+      roles: [
+        { job: "The Digital Signage Admin" },
+        { job: "The Puppeteer With Skills" },
+        { job: "The Voice Acting Trio" },
+        { job: "The Botany Enthusiast" },
+        { job: "The Filming And Editing Duo" },
+        { job: "The Script Genius" },
+        { job: "The Network Access Helper" },
+        { job: "The Plant Naming Committee Chair" },
+        { job: "The Technical Producer" },
+        { job: "The Person Who Said 'What If The Plants Could Talk'" }
+      ],
+      culprits: [1, 4, 5, 9],
+      clues: [
+        "Clue #1: The video was professionally filmed and edited — the Filming And Editing Duo's equipment serial numbers matched watermarks found in the raw files.",
+        "Clue #2: The scripts were outstanding — the Script Genius had published a one-act play the previous month with an eerily similar premise.",
+        "Clue #3: The puppet plants had accurate botanical details — the Botany Enthusiast had provided species-accurate descriptions to someone in a chat conversation uncovered later.",
+        "Clue #4: The Puppeteer had posted a video of plant puppets with the caption 'testing a concept' two weeks before the broadcast.",
+        "Clue #5: The Person Who Said 'What If The Plants Could Talk' had sent that exact message in the general Slack channel — and four people had replied with enthusiastic emojis instead of ignoring it like a normal person."
+      ],
+      story: "The Person Who Said 'What If The Plants Could Talk' started it. The Script Genius wrote the speeches. The Puppeteer built and operated the plant puppets. The Filming And Editing Duo produced the video. The Digital Signage Admin uploaded it (under peer pressure and genuine artistic appreciation). The Slack message was the origin of record. The plants were inspiring."
+    },
+    {
+      crime: "All the vending machines in the office were stocked overnight with healthy food — but the price display still showed the same prices as the junk food they replaced.",
+      roles: [
+        { job: "The Vending Machine Operator" },
+        { job: "The Nutrition Advocate" },
+        { job: "The Office Wellness Lead" },
+        { job: "The Health Food Supplier Contact" },
+        { job: "The Overnight Access Technician" },
+        { job: "The Employee Satisfaction Surveyor" },
+        { job: "The Data-Driven Decision Maker" },
+        { job: "The Skeptical Finance Manager" },
+        { job: "The Enthusiastic New Hire" },
+        { job: "The HR Manager Who Approved Something Slightly Different" }
+      ],
+      culprits: [1, 2, 3, 8],
+      clues: [
+        "Clue #1: The vending machine restock required operator-level access — a temporary access code was issued that week to the Health Food Supplier Contact.",
+        "Clue #2: The Nutrition Advocate had been collecting employee food preference data for three months — a data set that conveniently mapped to what replaced the junk food.",
+        "Clue #3: The Office Wellness Lead had submitted a proposal titled 'Invisible Healthy Transition' — which was rejected by Finance — found in their drafts folder.",
+        "Clue #4: The Enthusiastic New Hire had volunteered for 'a special late-night project' — logged in the overnight access records.",
+        "Clue #5: All four were found in an email chain with the subject 'The Vending Machine Revolution' — dating back four months."
+      ],
+      story: "The Nutrition Advocate had the data and the conviction. The Office Wellness Lead had the rejected proposal and the burning frustration. The Health Food Supplier Contact had the product and the access code. The Enthusiastic New Hire was thrilled to be included in anything. The email subject line was not discreet. The healthy food sold out in two days."
+    }
+  ]
+};
+
+let state = {
+  crewName: '',
+  playerCount: 0,
+  players: [], // [{name, job, isCulprit}]
+  scenario: null,
+  round: 1,
+  clueIndex: 0,
+  votes: {}, // playerName -> votedFor
+  eliminated: [], // player names
+  currentVoterIndex: 0,
+  selectedVote: null,
+  gameOver: false
+};
+
+function goTo(screenId) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  const target = document.getElementById(screenId);
+  target.classList.add('active');
+  target.classList.remove('fade-in');
+  void target.offsetWidth; // reflow
+  target.classList.add('fade-in');
+  window.scrollTo(0, 0);
+}
+
+function openModal(name) {
+  document.getElementById(name + 'Modal').classList.add('open');
+}
+
+function closeModal(name) {
+  document.getElementById(name + 'Modal').classList.remove('open');
+}
+
+function selectCount(n) {
+  state.playerCount = n;
+  document.querySelectorAll('.count-btn').forEach(b => b.classList.remove('selected'));
+  document.querySelectorAll('.count-btn').forEach(b => {
+    if (parseInt(b.textContent) === n) b.classList.add('selected');
+  });
+  buildPlayerInputs(n);
+}
+
+function buildPlayerInputs(n) {
+  const section = document.getElementById('playerNamesSection');
+  const container = document.getElementById('playerInputs');
+  section.style.display = 'block';
+  container.innerHTML = '';
+  for (let i = 0; i < n; i++) {
+    container.innerHTML += `
+      <div class="player-input-row">
+        <span class="player-num">${i + 1}.</span>
+        <input type="text" id="playerName${i}" placeholder="Player ${i + 1}" maxlength="20">
+      </div>`;
+  }
+}
+
+function getMafiaCount(n) {
+  if (n === 4) return 1;
+  if (n <= 6) return 2;
+  if (n <= 9) return 3;
+  return 4;
+}
+
+function startGame() {
+  const crewName = document.getElementById('crewName').value.trim();
+  if (!crewName) { alert('Please enter a crew name!'); return; }
+  if (!state.playerCount) { alert('Please select number of players!'); return; }
+  
+  const names = [];
+  for (let i = 0; i < state.playerCount; i++) {
+    const val = document.getElementById('playerName' + i).value.trim();
+    if (!val) { alert(`Please enter a name for Player ${i + 1}`); return; }
+    names.push(val);
+  }
+  
+  if (new Set(names).size !== names.length) { alert('All player names must be unique!'); return; }
+
+  state.crewName = crewName;
+  
+  const pool = SCENARIOS[state.playerCount];
+  state.scenario = pool[Math.floor(Math.random() * pool.length)];
+  
+  const roles = [...state.scenario.roles];
+  const shuffledRoles = shuffle(roles);
+  const shuffledNames = shuffle([...names]);
+  
+  const culpritIndices = state.scenario.culprits;
+  
+  state.players = shuffledNames.map((name, i) => {
+    const role = shuffledRoles[i];
+    const originalIndex = roles.indexOf(role); // find original index
+    const isCulprit = culpritIndices.includes(originalIndex);
+    return { name, job: role.job, isCulprit };
+  });
+
+  state.round = 1;
+  state.clueIndex = 0;
+  state.votes = {};
+  state.eliminated = [];
+  state.currentVoterIndex = 0;
+  state.selectedVote = null;
+  state.gameOver = false;
+
+  showRoleReveal(0);
+  goTo('screen-roles');
+}
+
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+let revealPlayerIndex = 0;
+let cardFlipped = false;
+
+function showRoleReveal(idx) {
+  revealPlayerIndex = idx;
+  cardFlipped = false;
+  const player = state.players[idx];
+  const isLast = idx === state.players.length - 1;
+  
+  document.getElementById('roleRevealTopText').innerHTML = 
+    `It's <span class="highlight">${player.name}'s</span> turn to see their role`;
+  
+  const container = document.getElementById('roleCardContainer');
+  container.innerHTML = `
+    <div class="role-card" id="theRoleCard" onclick="flipRoleCard(${idx})">
+      <div class="tap-hint">Tap to reveal</div>
+      <div class="player-name-on-card">${player.name}</div>
+    </div>`;
+  
+  document.getElementById('roleRevealActions').innerHTML = 
+    `<button class="btn btn-primary btn-disabled" id="nextRoleBtn" onclick="nextRole(${idx})">${isLast ? 'Continue →' : 'Next Player →'}</button>`;
+}
+
+function flipRoleCard(idx) {
+  if (cardFlipped) return;
+  cardFlipped = true;
+  const player = state.players[idx];
+  const card = document.getElementById('theRoleCard');
+  card.classList.add('flipping');
+  
+  setTimeout(() => {
+    card.classList.remove('flipping');
+    card.classList.add('flipped');
+    card.onclick = null;
+    
+    let cardContent = `
+      <div class="role-label">Your role is</div>
+      <div class="role-name">${player.job}</div>`;
+    
+    if (player.isCulprit) {
+      cardContent += `<div class="mafia-badge"> You are the Culprit!<br>Your mission: deceive and mislead.<br>Don't let them catch you.</div>`;
+    }
+    
+    card.innerHTML = cardContent;
+    
+    const btn = document.getElementById('nextRoleBtn');
+    btn.classList.remove('btn-disabled');
+    btn.onclick = () => nextRole(idx);
+  }, 200);
+}
+
+function nextRole(idx) {
+  if (!cardFlipped) { alert('Please tap the card to reveal your role first!'); return; }
+  if (idx + 1 < state.players.length) {
+    showRoleReveal(idx + 1);
+  } else {
+    goTo('screen-introduce');
+  }
+}
+
+
+document.addEventListener('DOMContentLoaded', () => {
+});
+
+const _origGoTo = goTo;
+
+function showCrimeScreen() {
+  document.getElementById('crimeDisplay').textContent = state.scenario.crime;
+  goTo('screen-crime');
+}
+
+document.querySelector('#screen-introduce .btn-primary').addEventListener('click', function() {
+  document.getElementById('crimeDisplay').textContent = state.scenario.crime;
+});
+
+function showDiscussion() {
+  const mafiaCount = getMafiaCount(state.playerCount);
+  const clueCount = state.scenario.clues.length;
+  const remaining = getRemainingPlayers();
+  const remainingMafia = state.players.filter(p => p.isCulprit && !state.eliminated.includes(p.name)).length;
+  
+  document.getElementById('roundInfoBar').textContent = 
+    `Round ${state.round} · ${remaining.length} players remaining · ${remainingMafia} Culprit(s) still hidden · ${clueCount} clues total`;
+  
+  const discussTitle = document.getElementById('discussTitle');
+  const discussContent = document.getElementById('discussContent');
+  
+  if (state.round === 1) {
+    discussTitle.textContent = 'Start the Investigation!';
+    discussContent.innerHTML = `<p style="font-size:1rem; line-height:1.6; text-align:center">
+      Share your initial theories. Who do you suspect?<br>
+      <span style="color:var(--crimson); font-style:italic">Discuss among yourselves — there are <strong>${mafiaCount}</strong> Culprit(s) hiding in your crew.</span>
+    </p>`;
+  } else {
+    discussTitle.textContent = `Round ${state.round} Discussion`;
+    discussContent.innerHTML = `<p style="font-size:1rem; line-height:1.6; text-align:center">
+      Discuss what you've learned so far. Who still seems suspicious?<br>
+      <span style="color:var(--crimson); font-style:italic">${remainingMafia} Culprit(s) remain among ${remaining.length} players.</span>
+    </p>`;
+  }
+  
+  document.getElementById('discussNextBtn').textContent = 'Reveal Clue →';
+  goTo('screen-discuss');
+}
+
+function showClue() {
+  const clues = state.scenario.clues;
+  const idx = Math.min(state.clueIndex, clues.length - 1);
+  const clueText = clues[idx];
+  
+  const mafiaCount = getMafiaCount(state.playerCount);
+  const remaining = getRemainingPlayers();
+  const remainingMafia = state.players.filter(p => p.isCulprit && !state.eliminated.includes(p.name)).length;
+  
+  document.getElementById('clueRoundInfo').textContent = 
+    `Round ${state.round} · ${remaining.length} players remaining · ${remainingMafia} Culprit(s) hidden`;
+  document.getElementById('clueNumber').textContent = `Clue #${state.round}${idx >= clues.length - 1 && state.round > clues.length ? ' (final clue repeating)' : ''}`;
+  document.getElementById('clueText').textContent = clueText;
+  
+  goTo('screen-clue');
+}
+
+function goToVote() {
+  startVoteRound();
+}
+
+function startVoteRound() {
+  state.votes = {};
+  state.currentVoterIndex = 0;
+  state.selectedVote = null;
+  showVoteForCurrentPlayer();
+}
+
+function getRemainingPlayers() {
+  return state.players.filter(p => !state.eliminated.includes(p.name));
+}
+
+function showVoteForCurrentPlayer() {
+  const remaining = getRemainingPlayers();
+  if (state.currentVoterIndex >= remaining.length) {
+    resolveVotes();
+    return;
+  }
+  
+  const voter = remaining[state.currentVoterIndex];
+  state.selectedVote = null;
+  
+  const mafiaCount = getMafiaCount(state.playerCount);
+  const remainingMafia = state.players.filter(p => p.isCulprit && !state.eliminated.includes(p.name)).length;
+  
+  document.getElementById('voteRoundInfo').textContent =
+    `Round ${state.round} · ${remaining.length} players · ${remainingMafia} Culprit(s) hidden`;
+  document.getElementById('voteSubtitle').textContent = 
+    `Who do you suspect most?`;
+  document.getElementById('votingPlayerLabel').textContent = 
+    `${voter.name}'s vote`;
+  
+  const grid = document.getElementById('voteGrid');
+  grid.innerHTML = '';
+  remaining.forEach(p => {
+    if (p.name === voter.name) return; // can't vote for yourself
+    const btn = document.createElement('button');
+    btn.className = 'vote-btn';
+    btn.textContent = p.name;
+    btn.onclick = () => selectVote(p.name);
+    grid.appendChild(btn);
+  });
+  
+  document.getElementById('voteConfirmBtn').className = 'btn btn-primary btn-disabled';
+  goTo('screen-vote');
+}
+
+function selectVote(name) {
+  state.selectedVote = name;
+  document.querySelectorAll('.vote-btn').forEach(b => {
+    b.classList.toggle('selected', b.textContent === name);
+  });
+  const btn = document.getElementById('voteConfirmBtn');
+  btn.className = 'btn btn-primary';
+  btn.onclick = confirmVote;
+}
+
+function confirmVote() {
+  if (!state.selectedVote) return;
+  const remaining = getRemainingPlayers();
+  const voter = remaining[state.currentVoterIndex];
+  state.votes[voter.name] = state.selectedVote;
+  state.currentVoterIndex++;
+  showVoteForCurrentPlayer();
+}
+
+function resolveVotes() {
+  const tally = {};
+  Object.values(state.votes).forEach(v => {
+    tally[v] = (tally[v] || 0) + 1;
+  });
+  
+  const maxVotes = Math.max(...Object.values(tally));
+  const topVoted = Object.keys(tally).filter(n => tally[n] === maxVotes);
+  
+  let eliminated;
+  if (topVoted.length === 1) {
+    eliminated = topVoted[0];
+  } else {
+    eliminated = topVoted[Math.floor(Math.random() * topVoted.length)];
+  }
+  
+  const eliminatedPlayer = state.players.find(p => p.name === eliminated);
+  state.eliminated.push(eliminated);
+  
+  const content = document.getElementById('voteResultContent');
+  const actions = document.getElementById('voteResultActions');
+  
+  if (eliminatedPlayer.isCulprit) {
+    content.innerHTML = `
+      <div class="result-bravo">Bravo!</div>
+      <div class="info-box" style="text-align:center">
+        <strong>${eliminated}</strong> was indeed a Culprit!<br>
+        <span style="color:var(--ink-light)">Their role was: ${eliminatedPlayer.job}</span>
+      </div>`;
+  } else {
+    content.innerHTML = `
+      <div class="result-good">Shame on you!</div>
+      <div class="info-box" style="text-align:center">
+        <strong>${eliminated}</strong> was innocent!<br>
+        <span style="color:var(--ink-light)">Their role was: ${eliminatedPlayer.job}</span>
+      </div>`;
+  }
+  
+  const remainingAfter = state.players.filter(p => !state.eliminated.includes(p.name));
+  const remainingMafia = remainingAfter.filter(p => p.isCulprit).length;
+  const remainingInnocent = remainingAfter.filter(p => !p.isCulprit).length;
+  
+  if (remainingMafia === 0) {
+    content.innerHTML += `<div class="crime-title" style="margin-top:15px"> All Culprits eliminated! Innocents win!</div>`;
+    actions.innerHTML = `
+      <button class="btn btn-primary" onclick="showGameOver(true)">See Full Story</button>`;
+  } else if (remainingMafia >= remainingInnocent) {
+    content.innerHTML += `<div class="crime-title" style="margin-top:15px; color:var(--crimson)"> The Culprits now have equal or more numbers. They win!</div>`;
+    actions.innerHTML = `
+      <button class="btn btn-primary" onclick="showGameOver(false)">See Full Story</button>`;
+  } else {
+    const clues = state.scenario.clues;
+    state.clueIndex++;
+    state.round++;
+    actions.innerHTML = `
+      <button class="btn btn-primary" onclick="continueRound()">Next Round →</button>`;
+  }
+  
+  goTo('screen-voteResult');
+}
+
+function continueRound() {
+  showDiscussion();
+}
+
+function showGameOver(innocentsWon) {
+  const content = document.getElementById('gameoverContent');
+  if (innocentsWon) {
+    content.innerHTML = `
+      <div class="result-bravo">Game Over!</div>
+      <div class="info-box center"> The Innocents win!<br><span style="font-style:italic; color:var(--ink-light)">Justice has been served.</span></div>`;
+  } else {
+    content.innerHTML = `
+      <div class="result-good">Game Over!</div>
+      <div class="info-box center"> The Culprits win!<br><span style="font-style:italic; color:var(--ink-light)">They got away with it...</span></div>`;
+  }
+  goTo('screen-gameover');
+}
+
+function revealFullStory() {
+  const culprits = state.players.filter(p => p.isCulprit);
+  const culpritList = culprits.map(p => `${p.name} (${p.job})`).join('<br>• ');
+  
+  document.getElementById('storyContent').innerHTML = `
+    <strong>The Culprits were:</strong>
+    <ul style="margin:8px 0 15px 0">
+      ${culprits.map(p => `<li>${p.name} — ${p.job}</li>`).join('')}
+    </ul>
+    <strong>How it happened:</strong>
+    <p style="margin-top:8px">${state.scenario.story}</p>`;
+  
+  goTo('screen-story');
+}
+
+document.getElementById('screen-introduce').querySelector('.btn-primary').onclick = function() {
+  document.getElementById('crimeDisplay').textContent = state.scenario.crime;
+  goTo('screen-crime');
+};
+
+document.getElementById('screen-crime').querySelector('.btn-primary').onclick = function() {
+  showDiscussion();
+};
+
+document.getElementById('screen-gameover').querySelectorAll('.btn')[0].onclick = function() {
+  revealFullStory();
+};
+
+document.getElementById('screen-story').querySelectorAll('.btn')[0].onclick = playAgain;
+document.getElementById('screen-story').querySelectorAll('.btn')[1].onclick = function() {
+  goTo('screen-welcome');
+};
+
+function playAgain() {
+  goTo('screen-setup');
+}
+
+</script>
+</body>
+</html>
